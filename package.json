@@ -1,0 +1,8 @@
+{
+  "name": "mindcoach-ai",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "openai": "^4.67.3"
+  }
+}
