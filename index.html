@@ -1,209 +1,186 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MindCoach</title>
-    <style>
-  :root{
-    --bg1:#fffaf2;  
-    --bg2:#eef9f7; 
-    --brand:#0FA3B1;
-    --text:#1c1c1c;
-    --muted:#6b7280;
-    --card:#ffffff;
-    --ring:#e6ebf5;
-  }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MindCoach</title>
 
-  *{ box-sizing:border-box; }
+  <style>
+    :root{
+      --bg1:#fffaf2; --bg2:#eef9f7;
+      --brand:#0fa3b1; --accent:#f0c36d;
+      --text:#1c1c1c;  --muted:#6b7280;
+      --card:#ffffff;  --ring:#e6ebf5;
+    }
+    *{ box-sizing:border-box; }
 
-  body{
-    margin:0;
-    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    color:var(--text);
-    background: linear-gradient(135deg, var(--bg1), var(--bg2));
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px;
-      scroll-behavior: smooth;
-  }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color:var(--text);
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      scroll-behavior:smooth;
+    }
 
-  .wrap{
-    width:100%;
-    max-width:760px;
-  }
+    .wrap{ width:100%; max-width:760px; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--ring);
+      border-radius:16px;
+      box-shadow: 12px 30px 30px rgba(2,18,58,.06);
+      padding:24px 22px;
+    }
 
-  .card{
-    background:var(--card);
-    border:1px solid var(--ring);
-    border-radius:16px;
-    box-shadow:0 12px 30px rgba(2, 18, 58, 0.06);
-    padding:24px 22px;
-  }
+    .brand{ display:flex; align-items:center; gap:12px; margin:0 4px 0 0; }
+    .logo{
+      font-size:20px; line-height:1; padding:8px 12px; border-radius:12px;
+      background:#eef3ff; color:var(--brand);
+    }
+    .brand h1{ margin:0; font-size:22px; font-weight:700; letter-spacing:.2px; }
+    .tag{ margin:8px 0 18px; color:var(--muted); font-size:14px; }
 
-  .brand{
-    display:flex; align-items:center; gap:12px;
-    margin:0 0 4px 0;
-  }
-  .brand .logo{
-    font-size:20px; line-height:1; padding:8px; border-radius:12px;
-    background:#eef3ff; color:var(--brand);
-  }
-  .brand h1{
-    margin:0; font-size:22px; font-weight:700;
-    letter-spacing:0.2px;
-  }
-  .tag{
-    margin:6px 0 18px 44px; color:var(--muted); font-size:14px;
-  }
+    label{ font-size:13px; color:var(--muted); }
+    select, input, button{
+      font:inherit;
+      border:1px solid var(--ring);
+      border-radius:10px;
+      padding:10px 12px;
+    }
+    select{ margin:0 8px 10px 8px; }
+    .row{ display:flex; gap:10px; }
+    input{ flex:1; outline:none; }
+    input:focus, select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(7,102,238,.12); }
+    button{ background:var(--brand); color:white; cursor:pointer; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
 
-  label{ font-size:13px; color:var(--muted); }
-  select, input, button{
-    font:inherit;
-    border:1px solid var(--ring);
-    border-radius:10px;
-    padding:10px 12px;
-  }
-  select{ margin:0 8px 10px 0; }
-  .row{ display:flex; gap:10px; }
-  input{ flex:1; outline:none; }
-  input:focus, select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(7,102,238,.12); }
-  button{
-    background:var(--brand); color:white; cursor:pointer;
-  }
-  button:disabled{ opacity:.6; cursor:not-allowed; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.msg {
-  animation: fadeIn 0.4s ease-in-out;
-    white-space: pre-wrap;
-}
-.brand_logo {
-  .dots::after {
-  content: '';
-  animation: blink 1s infinite;
-}
-@keyframes blink {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
-}
-  color: var(--accent);
-}
-.msg {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeUp 0.4s ease-in-out forwards;
-}
+    #log{
+      margin-top:16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-  #log{
-  margin-top:16px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
- .you {
-  background-color: #dceaff;
-  align-self: flex-end;
-  text-align: right;
-}
+    .msg{
+      opacity:0; transform:translateY(10px);
+      animation: fadeUp .4s ease-in-out forwards;
+      white-space: pre-wrap;
+      padding:12px 16px; border-radius:14px; max-width:80%; line-height:1.5;
+    }
+    @keyframes fadeUp{
+      from{ opacity:0; transform:translateY(10px); }
+      to{   opacity:1; transform:translateY(0); }
+    }
 
-.ai {
-  background-color: #fffaf2;
-  border: 1px solid #f0c36d;
-  align-self: flex-start;
-  text-align: left;
-} 
+    .you{
+      background:#dceaff;
+      align-self:flex-end;
+      text-align:right;
+    }
+    .ai{
+      background:#fffaf2;
+      border:1px solid var(--accent);
+      align-self:flex-start;
+      text-align:left;
+    }
 
-</style>
-  </head>
-<div class="wrap">
-  <div class="card">
-    <div class="brand">
-      <div class="logo">💎</div>
-      <h1>MindCoach</h1>
+    .dots::after{
+      content:"";
+      animation: ellipses 1.2s infinite steps(4,end);
+      display:inline-block; width:1ch; text-align:left;
+    }
+    @keyframes ellipses{
+      0%{ content:""; }
+      25%{ content:"."; }
+      50%{ content:".."; }
+      75%{ content:"..."; }
+      100%{ content:""; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div class="logo">💎</div>
+        <h1>MindCoach</h1>
+      </div>
+      <div class="tag">You matter. You’re heard. Calm bilingual guidance by LuxeMind.</div>
+
+      <label for="langSelect" style="font-size:14px;margin-right:8px;">Language:</label>
+      <select id="langSelect">
+        <option value="auto">Auto</option>
+        <option value="es">Español</option>
+        <option value="en">English</option>
+        <option value="both">Both</option>
+      </select>
+
+      <div class="row">
+        <input id="msg" placeholder="Say hola / hi…" />
+        <button id="send">Send</button>
+      </div>
+
+      <div id="log"></div>
     </div>
-    <div class="tag">You matter. You’re heard. Calm bilingual guidance by LuxeMind.</div>
+  </div>
 
-    <label for="langSelect" style="font-size:14px;margin-right:8px;">Language:</label>
-<select id="langSelect" style="margin-bottom:10px;">
-  <option value="auto">Auto</option>
-  <option value="es">Español</option>
-  <option value="en">English</option>
-  <option value="both">Both</option>
-</select>
-    <div class="row">
-      <input id="msg" placeholder="Say hola / hi…" />
-      <button id="send">Send</button>
-    </div>
+  <script>
+    const langSelect = document.getElementById("langSelect");
+    const input = document.getElementById("msg");
+    const btn = document.getElementById("send");
+    const log = document.getElementById("log");
 
-    <div id="log"></div>
-const langSelect = document.getElementById("langSelect");
-    <script>
-      const input = document.getElementById("msg");
-      const btn = document.getElementById("send");
-      const log = document.getElementById("log");
+    function add(role, text){
+      const div = document.createElement("div");
+      div.className = (role === 'You') ? 'msg you' : 'msg ai';
+      div.innerHTML = `<strong>${role}:</strong> `;
+      log.appendChild(div);
 
-      function add(role, text) {
-        const div = document.createElement("div");
-        div.className = (role === 'You') ? 'msg you' : 'msg ai';
-function add(role, text) {
-  const div = document.createElement("div");
-  div.className = "msg";
-  div.innerHTML = `<span class="${role === 'You' ? 'you' : 'ai'}"><strong>${role}:</strong> </span>`;
-  log.appendChild(div);
+      // tiny typewriter
+      let i = 0;
+      const typer = setInterval(() => {
+        div.innerHTML += text.charAt(i);
+        i++;
+        if(i >= text.length){ clearInterval(typer); }
+        window.scrollTo(0, document.body.scrollHeight);
+      }, 18);
+    }
 
-  // Typing animation effect
-  let i = 0;
-  const typing = setInterval(() => {
-    div.innerHTML += text.charAt(i);
-    i++;
-    if (i >= text.length) clearInterval(typing);
-    window.scrollTo(0, document.body.scrollHeight);
-  }, 25);
-}
-        const message = input.value.trim();
-        if (!message) return;
-        add("You", message);
-        // Show typing dots while waiting for response
-const typingDiv = document.createElement("div");
-typingDiv.className = "msg ai";
-typingDiv.innerHTML = "<em>MindCoach is typing<span class='dots'>...</span></em>";
-log.appendChild(typingDiv);
-        input.value = ""; btn.disabled = true; btn.textContent = "Thinking…";
-        try {
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ message: input.value, langMode: langSelect.value }),
-          });
-          const data = await res.json();
-          add("MindCoach", data.text ?? data.error ?? "No response.");
-        } catch (e) {
-          add("MindCoach", "Network error: " + e.message);
-        } finally {
-          btn.disabled = false; btn.textContent = "Send";
-          typingDiv.remove(); // remove the typing dots when response arrives
-        }
+    async function send(){
+      const message = input.value.trim();
+      if(!message) return;
+      add("You", message);
+      input.value = ""; btn.disabled = true; btn.textContent = "Thinking…";
+
+      const typingDiv = document.createElement("div");
+      typingDiv.className = "msg ai";
+      typingDiv.innerHTML = `<em>MindCoach is typing<span class="dots"></span></em>`;
+      log.appendChild(typingDiv);
+
+      try{
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, langMode: langSelect.value })
+        });
+        const data = await res.json();
+        typingDiv.remove();
+        add("MindCoach", data.text ?? data.error ?? "No response.");
+      }catch(e){
+        typingDiv.remove();
+        add("MindCoach", "Network error: " + (e?.message || e));
+      }finally{
+        btn.disabled = false; btn.textContent = "Send";
       }
-        </div><!-- /.card -->
-</div><!-- /.wrap -->
+    }
 
-      btn.onclick = send;
-      input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
-    </script>
-  </body>
+    btn.onclick = send;
+    input.addEventListener("keydown", e => { if(e.key === "Enter") send(); });
+  </script>
+</body>
 </html>
