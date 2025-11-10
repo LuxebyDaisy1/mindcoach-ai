@@ -29,7 +29,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
           { role: "user", content: message.slice(0, 300) },
         ],
-        response_format: "text",
       });
 
       const detected = (detect as any).output_text?.trim().toLowerCase() || "en";
@@ -51,7 +50,6 @@ Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
-      response_format: "text",
     });
 
     let text = (reply as any).output_text?.trim() || "";
@@ -67,7 +65,6 @@ Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
         },
         { role: "user", content: text.slice(0, 500) },
       ],
-      response_format: "text",
     });
 
     const verifyCode = (verify as any).output_text?.trim().toLowerCase() || "";
@@ -81,7 +78,6 @@ Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
           },
           { role: "user", content: text },
         ],
-        response_format: "text",
       });
       text = (rewrite as any).output_text?.trim() || text;
     }
