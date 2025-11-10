@@ -1,5 +1,5 @@
-// api/chat.ts — STRICT SINGLE LANGUAGE VERSION (Updated for SDK changes)
-// Fixed: replaced response_format → text_format and json_format
+// api/chat.ts — SINGLE LANGUAGE MODE (final, compatible with new SDK)
+// Fixed: uses "format" instead of deprecated response_format/json_format
 
 import OpenAI from "openai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
     if (!message?.trim()) return res.status(400).json({ error: "Empty message" });
 
-    // ------------ 1) DETECT LANGUAGE ------------
+    // ---------- STEP 1: Detect language ----------
     let target = "en";
     if (langMode && langMode !== "auto") {
       target = langMode;
@@ -30,16 +30,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           {
             role: "system",
             content:
-              "Return ONLY the ISO 639-1 language code for this text. Example: en, es, fr, it, de, ar, zh, hi. No punctuation or explanation.",
+              "Return ONLY the ISO 639-1 language code for the text (en, es, fr, it, de, ar, zh, hi, etc). No explanation.",
           },
           { role: "user", content: message.slice(0, 400) },
         ],
-        json_format: {
-          name: "lang_code",
-          schema: {
-            type: "object",
-            properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
-            required: ["code"],
+        format: {
+          type: "json_schema",
+          json_schema: {
+            name: "lang_code",
+            schema: {
+              type: "object",
+              properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
+              required: ["code"],
+            },
           },
         },
       });
@@ -51,45 +54,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       target = typeof code === "string" && /^[a-z]{2}$/.test(code) ? code : "en";
     }
 
-    // ------------ 2) GENERATE SINGLE-LANGUAGE REPLY ------------
+    // ---------- STEP 2: Generate single-language reply ----------
     const systemPrompt = `
-You are MindCoach, a gentle, supportive coach.
+You are MindCoach, a calm and supportive AI coach.
 Reply ONLY in the detected language: ${target}.
-Never include translations or English text if the user writes in another language.
-Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
+Never include translations or other languages.
+If user mixes languages, use the dominant one.
+Keep it warm, empathetic, and concise (2–4 short paragraphs max).
 `.trim();
 
-    const first = await client.responses.create({
+    const reply = await client.responses.create({
       model: "gpt-5-mini",
       input: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
-      text_format: "plain",
+      format: "text",
     });
 
     let text =
-      (first as any).output_text ??
-      (first as any).output?.[0]?.content?.[0]?.text ??
+      (reply as any).output_text ??
+      (reply as any).output?.[0]?.content?.[0]?.text ??
       "";
 
-    // ------------ 3) VERIFY LANGUAGE OUTPUT ------------
+    // ---------- STEP 3: Verify and correct if wrong language ----------
     const verify = await client.responses.create({
       model: "gpt-5-mini",
       input: [
         {
           role: "system",
           content:
-            "Return ONLY the ISO 639-1 code of the language used in this text. No extra words.",
+            "Return ONLY the ISO 639-1 code of the language used in the text. No other words.",
         },
         { role: "user", content: text.slice(0, 800) },
       ],
-      json_format: {
-        name: "lang_check",
-        schema: {
-          type: "object",
-          properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
-          required: ["code"],
+      format: {
+        type: "json_schema",
+        json_schema: {
+          name: "lang_check",
+          schema: {
+            type: "object",
+            properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
+            required: ["code"],
+          },
         },
       },
     });
@@ -108,7 +115,7 @@ Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
           },
           { role: "user", content: text },
         ],
-        text_format: "plain",
+        format: "text",
       });
 
       text =
