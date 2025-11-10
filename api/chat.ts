@@ -1,5 +1,5 @@
-// api/chat.ts — SINGLE LANGUAGE MODE (final, compatible with new SDK)
-// Fixed: uses "format" instead of deprecated response_format/json_format
+// api/chat.ts — final stable version (single language replies)
+// Works with current Vercel + OpenAI SDK (no 'format' or 'json_format')
 
 import OpenAI from "openai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -8,15 +8,10 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (req.method !== "POST")
-      return res.status(405).json({ error: "Method not allowed" });
-    if (!process.env.OPENAI_API_KEY)
-      return res.status(500).json({ error: "Missing OPENAI_API_KEY" });
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+    if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: "Missing API key" });
 
-    const { message, langMode } = (req.body ?? {}) as {
-      message?: string;
-      langMode?: "auto" | "en" | "es";
-    };
+    const { message, langMode } = req.body ?? {};
     if (!message?.trim()) return res.status(400).json({ error: "Empty message" });
 
     // ---------- STEP 1: Detect language ----------
@@ -25,106 +20,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       target = langMode;
     } else {
       const detect = await client.responses.create({
-        model: "gpt-5-mini",
+        model: "gpt-4o-mini",
         input: [
           {
             role: "system",
             content:
-              "Return ONLY the ISO 639-1 language code for the text (en, es, fr, it, de, ar, zh, hi, etc). No explanation.",
+              "Detect the language of this text and return only its ISO 639-1 two-letter code (en, es, fr, it, de, ar, zh, etc). No explanation.",
           },
-          { role: "user", content: message.slice(0, 400) },
+          { role: "user", content: message.slice(0, 300) },
         ],
-        format: {
-          type: "json_schema",
-          json_schema: {
-            name: "lang_code",
-            schema: {
-              type: "object",
-              properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
-              required: ["code"],
-            },
-          },
-        },
+        response_format: "text",
       });
 
-      const code =
-        (detect as any).output?.[0]?.content?.[0]?.json?.code ??
-        (detect as any).output_text?.trim().toLowerCase();
-
-      target = typeof code === "string" && /^[a-z]{2}$/.test(code) ? code : "en";
+      const detected = (detect as any).output_text?.trim().toLowerCase() || "en";
+      if (/^[a-z]{2}$/.test(detected)) target = detected;
     }
 
     // ---------- STEP 2: Generate single-language reply ----------
     const systemPrompt = `
-You are MindCoach, a calm and supportive AI coach.
+You are MindCoach, a calm and supportive bilingual AI coach.
 Reply ONLY in the detected language: ${target}.
-Never include translations or other languages.
-If user mixes languages, use the dominant one.
-Keep it warm, empathetic, and concise (2–4 short paragraphs max).
+Do not include translations or any other languages.
+If the message mixes languages, reply entirely in the dominant one.
+Keep tone warm, empathetic, and concise (2–4 short paragraphs max).
 `.trim();
 
     const reply = await client.responses.create({
-      model: "gpt-5-mini",
+      model: "gpt-4o-mini",
       input: [
         { role: "system", content: systemPrompt },
         { role: "user", content: message },
       ],
-      format: "text",
+      response_format: "text",
     });
 
-    let text =
-      (reply as any).output_text ??
-      (reply as any).output?.[0]?.content?.[0]?.text ??
-      "";
+    let text = (reply as any).output_text?.trim() || "";
 
-    // ---------- STEP 3: Verify and correct if wrong language ----------
+    // ---------- STEP 3: Verify that reply matches target ----------
     const verify = await client.responses.create({
-      model: "gpt-5-mini",
+      model: "gpt-4o-mini",
       input: [
         {
           role: "system",
           content:
-            "Return ONLY the ISO 639-1 code of the language used in the text. No other words.",
+            "Return only the ISO 639-1 language code used in this text. No other words.",
         },
-        { role: "user", content: text.slice(0, 800) },
+        { role: "user", content: text.slice(0, 500) },
       ],
-      format: {
-        type: "json_schema",
-        json_schema: {
-          name: "lang_check",
-          schema: {
-            type: "object",
-            properties: { code: { type: "string", pattern: "^[a-z]{2}$" } },
-            required: ["code"],
-          },
-        },
-      },
+      response_format: "text",
     });
 
-    const outCode =
-      (verify as any).output?.[0]?.content?.[0]?.json?.code ??
-      (verify as any).output_text?.trim().toLowerCase();
-
-    if (outCode !== target) {
+    const verifyCode = (verify as any).output_text?.trim().toLowerCase() || "";
+    if (verifyCode !== target && /^[a-z]{2}$/.test(verifyCode)) {
       const rewrite = await client.responses.create({
-        model: "gpt-5-mini",
+        model: "gpt-4o-mini",
         input: [
           {
             role: "system",
-            content: `Rewrite the following strictly in ${target}. Remove any other languages.`,
+            content: `Rewrite the following strictly in ${target}. Remove all other languages.`,
           },
           { role: "user", content: text },
         ],
-        format: "text",
+        response_format: "text",
       });
-
-      text =
-        (rewrite as any).output_text ??
-        (rewrite as any).output?.[0]?.content?.[0]?.text ??
-        text;
+      text = (rewrite as any).output_text?.trim() || text;
     }
 
-    res.status(200).json({ text: (text || "…").trim() });
+    res.status(200).json({ text });
   } catch (err: any) {
     console.error("MindCoach error:", err);
     res.status(500).json({ error: err.message || "Unknown error" });
