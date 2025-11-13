@@ -1,71 +1,37 @@
-// api/chat.ts — final stable version (single-language replies)
-// Works with current Vercel + OpenAI SDK (no "format" or "json_format")
+// api/chat.ts
 
-import OpenAI from "openai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import OpenAI from "openai";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
   try {
-    // Allow only POST
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+    const { message, langMode } = req.body as {
+      message?: string;
+      langMode?: "auto" | "en" | "es" | "both";
+    };
+
+    const userMessage = (message ?? "").toString().trim();
+
+    if (!userMessage) {
+      res.status(400).json({ error: "Message is required." });
+      return;
     }
 
-    // Check API key
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "Missing API key" });
-    }
+    const safeLangMode: "auto" | "en" | "es" | "both" =
+      langMode === "en" || langMode === "es" || langMode === "both"
+        ? langMode
+        : "auto";
 
-    // Get body
-    const { message, langMode } = (req.body as any) ?? {};
-    if (!message || typeof message !== "string") {
-      return res.status(400).json({ error: "Empty message" });
-    }
-
-    // ---------------- STEP 1: Decide target language ----------------
-    let target = "en"; // default
-
-    if (langMode && langMode !== "auto") {
-      // Explicit language from front-end ("en", "es", "fr", etc.)
-      target = String(langMode).toLowerCase();
-    } else {
-      // Auto-detect language from user's text
-      const detect = await client.responses.create({
-        model: "gpt-4o-mini",
-        input: [
-          {
-            role: "system",
-            content:
-              "Detect the language of this text and return only its ISO 639-1 two-letter code (en, es, fr, pt, etc.). No other words.",
-          },
-          {
-            role: "user",
-            content: message.slice(0, 300),
-          },
-        ],
-      });
-
-      const detected = ((detect as any).output_text ?? "").trim().toLowerCase();
-
-      if (/^[a-z]{2}$/.test(detected)) {
-        target = detected;
-      } else {
-        target = "en";
-      }
-    }
-
-    // ---------------- STEP 2: MindCoach system prompt ----------------
     const systemPrompt = `
-    {
-      role: "system",
-      content: `
 You are **MindCoach**, a calm, kind, psychologically-informed coach created by LuxeMind.
 
 Your job:
@@ -124,70 +90,38 @@ Safety:
   - Be very calm and caring.
   - Encourage seeking real-world help (trusted person, professional, or emergency services depending on severity and country).
   - Do **not** give instructions for self-harm, violence, or illegal activity.
-`,
-    },
-`.trim();
+`;
 
-    // ---------------- STEP 3: Generate reply in target language ----------------
-    const reply = await client.responses.create({
-      model: "gpt-4o-mini",
+    const userPrompt = `
+User message: ${userMessage}
+
+Language mode from app: ${safeLangMode}
+Remember to follow the language rules exactly.
+`;
+
+    const response = await client.responses.create({
+      model: "gpt-4.1-mini",
       input: [
         {
           role: "system",
-          content: systemPrompt + `\n\nTarget language: ${target}`,
+          content: systemPrompt,
         },
         {
           role: "user",
-          content: message,
+          content: userPrompt,
         },
       ],
     });
 
-    let text = ((reply as any).output_text ?? "").trim();
+    const text =
+      response.output?.[0]?.content?.[0]?.text?.value?.trim() ??
+      "Lo siento, hubo un problema al generar la respuesta. / I’m sorry, something went wrong generating the reply.";
 
-    // ---------------- STEP 4: Verify reply language matches target ----------------
-    const verify = await client.responses.create({
-      model: "gpt-4o-mini",
-      input: [
-        {
-          role: "system",
-          content:
-            "Return only the ISO 639-1 language code used in this text. No other words.",
-        },
-        {
-          role: "user",
-          content: text.slice(0, 500),
-        },
-      ],
-    });
-
-    const verifyCode = ((verify as any).output_text ?? "").trim().toLowerCase();
-
-    if (verifyCode !== target && /^[a-z]{2}$/.test(verifyCode)) {
-      // Rewrite into the correct language if it doesn't match
-      const rewrite = await client.responses.create({
-        model: "gpt-4o-mini",
-        input: [
-          {
-            role: "system",
-            content: `Rewrite the following strictly in ${target}. Remove all other languages.`,
-          },
-          {
-            role: "user",
-            content: text,
-          },
-        ],
-      });
-
-      text = ((rewrite as any).output_text ?? "").trim() || text;
-    }
-
-    // ---------------- DONE ----------------
-    return res.status(200).json({ text });
+    res.status(200).json({ text });
   } catch (err: any) {
     console.error("MindCoach error:", err);
-    return res
+    res
       .status(500)
-      .json({ error: err?.message || "Unknown error" });
+      .json({ error: "MindCoach had a temporary issue. Please try again." });
   }
 }
