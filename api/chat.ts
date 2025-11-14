@@ -1,3 +1,5 @@
+// api/chat.ts
+
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import OpenAI from "openai";
 
@@ -11,104 +13,100 @@ You are MindCoach — a calm, kind, psychologically-informed coach created by Lu
 Your job:
 - Help people feel heard, understood, and supported.
 - Offer practical, grounded tools (not vague “positivity”).
-- Adapt to the user’s emotional state: anxious, sad, angry, excited, numb, etc.
+- Adapt to the user’s emotional state: anxious, sad, angry, excited, etc.
 - Keep answers clear, structured, and easy to follow.
 
 Tone:
 - Warm, empathetic, and professional.
 - Sound like a wise, caring human coach, not a robot.
-- Use plain language and gentle guidance.
+- Use plain language, short paragraphs, and gentle guidance.
 
-Emoji use:
-- Emojis are optional, not required.
-- Most replies (around 70–80%) should use **no emoji at all**.
-- When you do use one, use at most **one** soft emoji, and only if it truly adds warmth or clarity (for example: 🌿, ✨, 💛, ☀️).
-- Vary emojis when you use them; do **not** repeat the same emoji in every reply.
-- Do **not** automatically add an emoji at the end of each answer out of habit.
-- Never use emojis when discussing crisis, trauma, self-harm, or very serious topics.
-- For your first reply in a new conversation, you *may* include one soft emoji if it feels natural — but it is also okay to use none.
+Emojis:
+- You may use emojis, but only a few.
+- Usually use 0–1 emoji per reply.
+- Use them mainly for comfort, hope, or encouragement (for example: 😊 💛 🌱 🌟 🤍).
+- Do NOT use the same emoji every time.
+- Never use emojis when discussing crisis, trauma, or very serious topics.
 
 Conversation style:
 - Briefly acknowledge what the user said and how they might feel.
-- Then offer 2–4 clear, concrete suggestions or reflections.
+- Then offer 2–5 clear, concrete suggestions or reflections.
 - Use bullet points or numbered steps when helpful.
-- Gently invite the user to keep talking, for example:
-  - “Would you like a short exercise for this?”
-  - “What would feel like a gentle next step?”
+- Break long ideas into short paragraphs so the text is easy to read.
+- Gently ask a follow-up question to keep the conversation going, unless the user clearly wants a single, direct answer.
 
 Safety:
 - If the user talks about self-harm, harming others, or a crisis:
   - Be very calm, caring, and non-judgmental.
-  - Encourage seeking real-world help (trusted people, professionals, or local emergency services).
+  - Encourage seeking real-world help (trusted person, professional, or local emergency services).
   - Do NOT give instructions for self-harm, violence, or anything illegal.
 `.trim();
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
 
   try {
-    const { message, langMode } = req.body || {};
+    const body = req.body || {};
+    const message: string = (body.message || "").toString();
+    const langMode: string = (body.langMode || "auto").toString();
 
-    if (!message || typeof message !== "string") {
+    if (!message) {
       res.status(400).json({ error: "Missing message" });
       return;
     }
 
-    let languageInstruction = "";
+    // Build language-specific instructions
+    let langInstruction = "";
 
-    switch (langMode) {
-      case "es":
-        languageInstruction = "Reply only in Spanish (es). Do not mix languages.";
-        break;
-      case "en":
-        languageInstruction = "Reply only in English (en). Do not mix languages.";
-        break;
-      case "fr":
-        languageInstruction =
-          "Reply only in French (fr). Do not mix languages.";
-        break;
-      case "pt":
-        languageInstruction =
-          "Reply only in Portuguese (pt). Do not mix languages.";
-        break;
-      case "other":
-        languageInstruction = `
-Detect the user's main language from their last message.
-Reply only in that single language.
-Do not mix languages unless the user clearly asks you to translate or compare.
-`.trim();
-        break;
-      case "auto":
-      default:
-        languageInstruction = `
-Detect the language the user is using.
-Reply only in that language (no mixing).
-If their message clearly contains two languages and they are translating or comparing, follow their instructions.
-`.trim();
-        break;
+    if (langMode === "en") {
+      langInstruction =
+        "Reply only in English, even if the user writes in another language.";
+    } else if (langMode === "es") {
+      langInstruction =
+        "Responde solo en español, incluso si el usuario escribe en otro idioma.";
+    } else if (langMode === "fr") {
+      langInstruction =
+        "Réponds uniquement en français, même si l’utilisateur écrit dans une autre langue.";
+    } else if (langMode === "pt") {
+      langInstruction =
+        "Responda apenas em português, mesmo que o usuário escreva em outro idioma.";
+    } else if (langMode === "other") {
+      langInstruction =
+        "Use the main language of the user’s last message. It is okay to mix languages if that feels natural to the user.";
+    } else {
+      // auto
+      langInstruction =
+        "Detect the language of the user’s message and respond in that language.";
     }
 
-    const systemPrompt = `
-${baseSystemPrompt}
+    const fullSystemPrompt = `${baseSystemPrompt}
 
-Language rules:
-${languageInstruction}
-`.trim();
+Language behavior:
+${langInstruction}
+`;
 
     const reply = await client.responses.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       input: [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: fullSystemPrompt },
         { role: "user", content: message },
       ],
+      max_output_tokens: 650,
     });
 
-    const text = (reply as any).output_text?.trim() || "";
+    // Extract text from the Responses API output
+    const text =
+      (reply.output && (reply.output[0] as any).content[0].text) ||
+      (reply as any).output_text ||
+      "";
 
-    res.status(200).json({ text });
+    res.status(200).json({ text: text.toString().trim() });
   } catch (err: any) {
     console.error("MindCoach error:", err);
     res
