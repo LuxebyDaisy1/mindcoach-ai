@@ -1,508 +1,229 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>MindCoach</title>
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
 
-    <!-- Favicon / mobile icon -->
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="1024x1024"
-      href="mindcoach-icon-1024.png"
-    />
+  <title>MindCoach</title>
 
-    <style>
-      :root {
-        /* Background & card */
-        --bg1: #eef6f6;
-        --bg2: #f9f3ec;
-        --bg3: #e4f0f4;
-        --card: #ffffff;
+  <!-- Favicon / app icon (mobile) -->
+  <link
+    rel="icon"
+    type="image/png"
+    sizes="1024x1024"
+    href="mindcoach-icon-1024.png"
+  />
 
-        /* Brand / accent */
-        --brand: #2b7f84;
-        --brand-soft: #3d9298;
+  <style>
+    :root {
+      --bg1: #eef0ff;
+      --bg2: #e7f7f2;
+      /* softer cream beige for AI bubbles */
+      --bg3: #f8f3e8;
 
-        /* Bubbles */
-        --bubble-ai: #f8f0dd;
-        --bubble-you: #d7e4ff;
+      --card: #ffffff;
+      --brand: #4fa3d1;
+      --bubble-ai: var(--bg3);
+      --bubble-you: #e0f2ff;
 
-        /* Text */
-        --text: #39424e;
-        --muted: #7b8a9a;
+      --text: #3f4a52;
+      --muted: #7c8a94;
+    }
 
-        /* Meta text (timestamps, hints) */
-        --meta: #9aa6b5;
-      }
+    /* Watercolor background */
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(200, 225, 255, 0.45), transparent 60%),
+        radial-gradient(circle at 80% 30%, rgba(210, 245, 230, 0.4), transparent 60%),
+        radial-gradient(circle at 30% 80%, rgba(255, 240, 220, 0.45), transparent 60%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
 
-      /* Soft watercolor background */
+    .wrap {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 28px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.06);
+      padding: 24px 24px 16px;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-height: 90vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .brand_logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #e2f1f4;
+    }
+
+    .brand_logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.03em;
+      color: #14536b;
+    }
+
+    .tag {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 4px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.45;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    .msg strong {
+      font-weight: 600;
+    }
+
+    .msg.ai {
+      align-self: flex-start;
+      background: var(--bubble-ai);
+      border-bottom-left-radius: 6px;
+    }
+
+    .msg.you {
+      align-self: flex-end;
+      background: var(--bubble-you);
+      border-bottom-right-radius: 6px;
+    }
+
+    .input-row {
+      margin-top: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(180, 196, 210, 0.8);
+      padding: 4px 4px 4px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .input-row textarea {
+      flex: 1;
+      border: none;
+      resize: none;
+      font: inherit;
+      padding: 8px 0;
+      outline: none;
+      background: transparent;
+      min-height: 40px;
+      max-height: 90px;
+    }
+
+    .input-row textarea::placeholder {
+      color: #a0a9b3;
+    }
+
+    .input-row button {
+      border-radius: 999px;
+      padding: 10px 22px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 6px 18px rgba(79, 163, 209, 0.35);
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out,
+        background 0.1s ease-out;
+    }
+
+    .input-row button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(79, 163, 209, 0.4);
+    }
+
+    .input-row button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 12px rgba(79, 163, 209, 0.3);
+    }
+
+    .input-row button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
       body {
-        margin: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, Helvetica, Arial, sans-serif;
-        color: var(--text);
-        min-height: 100vh;
-        display: flex;
-        align-items: stretch;
-        justify-content: center;
-        padding: 16px;
-        background:
-          radial-gradient(circle at 10% 20%, rgba(238, 246, 246, 0.9), transparent 60%),
-          radial-gradient(circle at 80% 15%, rgba(228, 240, 244, 0.9), transparent 55%),
-          radial-gradient(circle at 20% 90%, rgba(249, 243, 236, 0.9), transparent 55%),
-          linear-gradient(135deg, #f6f8fb, #eef5f5);
-      }
-
-      .wrap {
-        width: 100%;
-        max-width: 760px;
-        display: flex;
-        align-items: stretch;
-        justify-content: center;
+        padding: 10px;
       }
 
       .card {
-        background: var(--card);
-        border-radius: 28px;
-        box-shadow:
-          0 20px 60px rgba(0, 0, 0, 0.08),
-          0 2px 8px rgba(0, 0, 0, 0.03);
-        padding: 20px 20px 16px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .brand {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 4px;
-      }
-
-      .brand_logo {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #dceced;
-      }
-
-      .brand_logo img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .brand h1 {
-        margin: 2px 0 0;
-        font-size: 22px;
-        font-weight: 650;
-        letter-spacing: 0.03em;
-        color: var(--brand-soft);
-      }
-
-      .tag {
-        font-size: 13px;
-        text-align: center;
-        color: var(--muted);
-        margin-bottom: 4px;
-      }
-
-      .welcome {
-        font-size: 14px;
-        color: var(--muted);
-        text-align: center;
-        margin-bottom: 6px;
-      }
-
-      .controls {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-      }
-
-      label {
-        font-weight: 500;
-      }
-
-      select {
-        font: inherit;
-        border-radius: 999px;
-        border: 1px solid rgba(120, 158, 170, 0.4);
-        padding: 6px 12px;
-        outline: none;
-        background: #ffffff;
-      }
-
-      select:focus {
-        border-color: var(--brand-soft);
-        box-shadow: 0 0 0 2px rgba(43, 127, 132, 0.15);
-      }
-
-      #log {
-        flex: 1;
-        min-height: 280px;
-        max-height: 560px;
-        overflow-y: auto;
-        padding: 12px 8px;
-        border-radius: 18px;
-        background:
-          radial-gradient(circle at 0% 0%, rgba(248, 240, 221, 0.12), transparent 55%),
-          radial-gradient(circle at 100% 100%, rgba(215, 228, 255, 0.16), transparent 55%),
-          #fdfdfb;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+        padding: 18px 18px 10px;
+        border-radius: 22px;
       }
 
       .msg {
         max-width: 90%;
-        margin: 8px 0;
-        font-size: 14px;
-        line-height: 1.5;
-        display: inline-flex;
-        flex-direction: column;
-        gap: 2px;
       }
 
-      .msg.ai {
-        align-self: flex-start;
+      .brand h1 {
+        font-size: 21px;
       }
-
-      .msg.you {
-        align-self: flex-end;
-      }
-
-      .bubble {
-        padding: 10px 14px;
-        border-radius: 18px;
-        box-shadow:
-          0 10px 26px rgba(0, 0, 0, 0.04),
-          0 1px 4px rgba(0, 0, 0, 0.03);
-        background: #ffffff;
-      }
-
-      .msg.ai .bubble {
-        background: var(--bubble-ai);
-        border-bottom-left-radius: 6px;
-      }
-
-      .msg.you .bubble {
-        background: var(--bubble-you);
-        border-bottom-right-radius: 6px;
-      }
-
-      .from {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--meta);
-        margin-bottom: 2px;
-      }
-
-      .meta {
-        font-size: 11px;
-        color: var(--meta);
-        text-align: right;
-        padding: 0 4px;
-      }
-
-      .typing-dots {
-        display: inline-flex;
-        gap: 3px;
-      }
-
-      .typing-dots span {
-        width: 4px;
-        height: 4px;
-        border-radius: 999px;
-        background: rgba(0, 0, 0, 0.25);
-        animation: bounce 1s infinite ease-in-out;
-      }
-
-      .typing-dots span:nth-child(2) {
-        animation-delay: 0.15s;
-      }
-
-      .typing-dots span:nth-child(3) {
-        animation-delay: 0.3s;
-      }
-
-      @keyframes bounce {
-        0%,
-        80%,
-        100% {
-          transform: translateY(0);
-          opacity: 0.4;
-        }
-        40% {
-          transform: translateY(-3px);
-          opacity: 1;
-        }
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 10px;
-      }
-
-      .row textarea {
-        flex: 1;
-        border-radius: 999px;
-        padding: 10px 14px;
-        border: 1px solid rgba(171, 181, 193, 0.6);
-        background: #fafafa;
-        resize: none;
-        font: inherit;
-        min-height: 42px;
-        max-height: 92px;
-        line-height: 1.4;
-      }
-
-      .row textarea:focus {
-        outline: none;
-        background: #ffffff;
-        border-color: var(--brand-soft);
-        box-shadow: 0 0 0 2px rgba(43, 127, 132, 0.12);
-      }
-
-      button {
-        border-radius: 999px;
-        padding: 11px 20px;
-        border: none;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        background: var(--brand-soft);
-        color: #ffffff;
-        box-shadow: 0 10px 22px rgba(43, 127, 132, 0.35);
-        transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
-      }
-
-      button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 14px 30px rgba(43, 127, 132, 0.4);
-      }
-
-      button:active {
-        transform: translateY(0);
-        box-shadow: 0 6px 14px rgba(43, 127, 132, 0.3);
-      }
-
-      button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
-
-      .hint {
-        margin-top: 2px;
-        font-size: 11px;
-        color: var(--meta);
-        text-align: center;
-      }
-
-      @media (max-width: 768px) {
-        body {
-          padding: 10px;
-        }
-
-        .card {
-          padding: 18px 14px 14px;
-          border-radius: 22px;
-        }
-
-        .brand h1 {
-          font-size: 20px;
-        }
-
-        #log {
-          min-height: 220px;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="wrap">
-      <div class="card">
-        <div class="brand">
-          <div class="brand_logo">
-            <img src="mindcoach-icon-1024.png" alt="MindCoach logo" />
-          </div>
-          <h1>MindCoach</h1>
-        </div>
-
-        <div class="tag">
-          You matter. You&rsquo;re heard. Calm guidance in every language by
-          LuxeMind.
-        </div>
-
-        <div class="welcome">
-          Welcome. I’m here for you with calm, clarity, and care. Whenever
-          you’re ready, tell me what’s on your mind.
-        </div>
-
-        <div class="controls">
-          <label for="langSelect">Language:</label>
-          <select id="langSelect">
-            <option value="auto">Auto</option>
-            <option value="es">Español</option>
-            <option value="en">English</option>
-            <option value="fr">Français</option>
-            <option value="pt">Português</option>
-            <option value="other">Other / Mixed</option>
-          </select>
-        </div>
-
-        <div id="log"></div>
-
-        <div class="row">
-          <textarea
-            id="msg"
-            placeholder="Share what’s on your mind… (Enter to send, Shift+Enter for a new line)"
-            autocomplete="off"
-          ></textarea>
-          <button id="send">Send</button>
-        </div>
-        <div class="hint">
-          Enter to send · Shift + Enter for a new line
-        </div>
-      </div>
-    </div>
-
-    <script>
-      const log = document.getElementById("log");
-      const input = document.getElementById("msg");
-      const btn = document.getElementById("send");
-      const langSelect = document.getElementById("langSelect");
-
-      function scrollToBottom() {
-        log.scrollTop = log.scrollHeight;
-      }
-
-      function formatTime(date) {
-        const d = date instanceof Date ? date : new Date();
-        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      }
-
-      function add(role, text, opts = {}) {
-        const { isTyping = false } = opts;
-        const div = document.createElement("div");
-        div.className = "msg " + (role === "You" ? "you" : "ai");
-
-        const from = document.createElement("div");
-        from.className = "from";
-        from.textContent = role === "You" ? "You" : "MindCoach";
-
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-
-        if (isTyping) {
-          bubble.innerHTML =
-            '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        } else {
-          bubble.textContent = (text || "").trim();
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        meta.textContent = formatTime(new Date());
-
-        div.appendChild(from);
-        div.appendChild(bubble);
-        div.appendChild(meta);
-        log.appendChild(div);
-
-        scrollToBottom();
-        return { container: div, bubble };
-      }
-
-      function addTyping() {
-        return add("MindCoach", "", { isTyping: true });
-      }
-
-      async function send() {
-        const message = input.value.trim();
-        if (!message) return;
-
-        add("You", message);
-        input.value = "";
-        input.focus();
-
-        btn.disabled = true;
-        btn.textContent = "Thinking…";
-
-        const typing = addTyping();
-
-        try {
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message,
-              langMode: langSelect.value || "auto",
-            }),
-          });
-
-          const data = await res.json();
-          typing.container.remove();
-
-          if (!res.ok) {
-            add(
-              "MindCoach",
-              data.error ||
-                "I’m sorry, something went wrong while generating the reply."
-            );
-          } else {
-            add("MindCoach", data.text || "I’m here, but I didn’t get a reply.");
-          }
-        } catch (e) {
-          typing.container.remove();
-          add(
-            "MindCoach",
-            "Network error, cariño. Please check your connection and try again."
-          );
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "Send";
-        }
-      }
-
-      // Initial gentle greeting bubble
-      window.addEventListener("load", () => {
-        add(
-          "MindCoach",
-          "Hello 🌿 I’m glad you’re here. How are you feeling right now?"
-        );
-      });
-
-      btn.onclick = send;
-
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          send();
-        }
-        // Shift+Enter naturally makes a new line (no extra code needed)
-      });
-    </script>
-  </body>
-</html>
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div class="brand_logo">
+          <img src="mindcoach-icon-1024.png
