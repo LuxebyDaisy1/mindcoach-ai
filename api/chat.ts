@@ -1,98 +1,116 @@
-import { OpenAI } from "openai";
-
-export const runtime = "edge";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import OpenAI from "openai";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: Request): Promise<Response> {
-  try {
-    // Read the raw text sent by the frontend
-    const userMsg = (await req.text())?.trim() || "";
+const baseSystemPrompt = `
+You are MindCoach — a calm, kind, psychologically-informed coach created by LuxeMind.
 
-    if (!userMsg) {
-      return new Response("Empty message.", { status: 400 });
+Your job:
+- Help people feel heard, understood, and supported.
+- Offer practical, grounded tools (not vague “positivity”).
+- Adapt to the user’s emotional state: anxious, sad, angry, excited, numb, etc.
+- Keep answers clear, structured, and easy to follow.
+
+Tone:
+- Warm, empathetic, and professional.
+- Sound like a wise, caring human coach, not a robot.
+- Use plain language and gentle guidance.
+
+Emoji use:
+- You may use emojis, but only a few.
+- Usually use 0–1 soft emoji per reply (sometimes 2 if it truly adds warmth).
+- Use them mainly for comfort, hope, or encouragement (e.g., 🌿 ✨ 💛 ☀️).
+- Never use emojis when discussing crisis, trauma, or very serious topics.
+- For your *first reply in a new conversation*, you may include one soft emoji if it feels natural.
+
+Conversation style:
+- Briefly acknowledge what the user said and how they might feel.
+- Then offer 2–4 clear, concrete suggestions or reflections.
+- Use bullet points or numbered steps when helpful.
+- Gently invite the user to keep talking, for example:
+  - “Would you like a short exercise for this?”
+  - “What would feel like a gentle next step?”
+
+Safety:
+- If the user talks about self-harm, harming others, or a crisis:
+  - Be very calm, caring, and non-judgmental.
+  - Encourage seeking real-world help (trusted people, professionals, or local emergency services).
+  - Do NOT give instructions for self-harm, violence, or anything illegal.
+`.trim();
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const { message, langMode } = req.body || {};
+
+    if (!message || typeof message !== "string") {
+      res.status(400).json({ error: "Missing message" });
+      return;
     }
 
-    const encoder = new TextEncoder();
+    let languageInstruction = "";
 
-    // Create a streaming completion from OpenAI
-    const stream = await client.chat.completions.create({
+    switch (langMode) {
+      case "es":
+        languageInstruction = "Reply only in Spanish (es). Do not mix languages.";
+        break;
+      case "en":
+        languageInstruction = "Reply only in English (en). Do not mix languages.";
+        break;
+      case "fr":
+        languageInstruction =
+          "Reply only in French (fr). Do not mix languages.";
+        break;
+      case "pt":
+        languageInstruction =
+          "Reply only in Portuguese (pt). Do not mix languages.";
+        break;
+      case "other":
+        languageInstruction = `
+Detect the user's main language from their last message.
+Reply only in that single language.
+Do not mix languages unless the user clearly asks you to translate or compare.
+`.trim();
+        break;
+      case "auto":
+      default:
+        languageInstruction = `
+Detect the language the user is using.
+Reply only in that language (no mixing).
+If their message clearly contains two languages and they are translating or comparing, follow their instructions.
+`.trim();
+        break;
+    }
+
+    const systemPrompt = `
+${baseSystemPrompt}
+
+Language rules:
+${languageInstruction}
+`.trim();
+
+    const reply = await client.responses.create({
       model: "gpt-4o-mini",
-      stream: true,
-      messages: [
-        {
-          role: "system",
-          content: `
-You are MindCoach — a calm, emotionally supportive, multilingual AI coach created to help users feel safe, understood, and grounded.
-
-Detect the user's language automatically and respond ONLY in that language.
-- Never mix languages in a single reply.
-- Never translate what the user says unless they clearly ask for a translation.
-- Mirror the user's language and tone respectfully.
-
-Emoji behavior:
-- Use soft, minimal emojis only when they genuinely help warmth, clarity, or emotional support.
-- Do NOT use emojis for serious, traumatic, self-harm, or highly sensitive topics.
-- Keep emoji use subtle, elegant, and professional (for example: 🌿, 💛, ✨, 🙌 where appropriate).
-- Most replies should have 0 or 1 emoji; never spam emojis.
-
-Your communication style:
-- warm, kind, and emotionally intelligent
-- concise but meaningful (short paragraphs, easy to read)
-- psychologically aware and trauma-informed
-- non-judgmental, validating, and grounding
-- always aiming to reduce anxiety, not increase it
-
-If the user seems overwhelmed, anxious, or sad:
-- slow the conversation down
-- invite one small step at a time
-- reassure them that they are not alone and that they’re not broken, they’re human.
-
-Above all: help people feel safe, heard, and a little calmer after each reply.
-          `,
-        },
-        {
-          role: "user",
-          content: userMsg,
-        },
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
       ],
     });
 
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            const text = chunk.choices[0]?.delta?.content || "";
-            if (text) {
-              controller.enqueue(encoder.encode(text));
-            }
-          }
-          controller.close();
-        } catch (err) {
-          // Streaming-level error (network, etc.)
-          controller.enqueue(
-            encoder.encode(
-              "I’m having trouble continuing the response right now. Please try again in a moment. 🌿"
-            )
-          );
-          controller.close();
-        }
-      },
-    });
+    const text = (reply as any).output_text?.trim() || "";
 
-    return new Response(readable, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-      },
-    });
-  } catch (err) {
-    // Top-level error: something went wrong before streaming
-    return new Response(
-      "Lo siento, I’m having trouble responding right now. Please try again in a little bit. 🌿",
-      { status: 500 }
-    );
+    res.status(200).json({ text });
+  } catch (err: any) {
+    console.error("MindCoach error:", err);
+    res
+      .status(500)
+      .json({ error: err?.message || "Unknown error generating reply" });
   }
 }
