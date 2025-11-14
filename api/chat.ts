@@ -1,4 +1,4 @@
-// api/chat.ts
+I// api/chat.ts
 
 import type { NextApiRequest as VercelRequest, NextApiResponse as VercelResponse } from "next";
 import OpenAI from "openai";
