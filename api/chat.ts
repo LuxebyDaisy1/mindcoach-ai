@@ -1,6 +1,6 @@
 // api/chat.ts
 
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NextApiRequest as VercelRequest, NextApiResponse as VercelResponse } from "next";
 import OpenAI from "openai";
 
 const client = new OpenAI({
