@@ -386,12 +386,21 @@
     let langMode = "auto";
 
     const MAX_FREE_MESSAGES = 3; // number of AI replies before lock
-    let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
-    let locked = usedMessages >= MAX_FREE_MESSAGES;
-
     const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
+    const FREE_RESET_DATE_KEY = "lmc_lastFreeResetDate";
+
     const today = new Date().toISOString().slice(0, 10);
     const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
+    const lastFreeResetDate = localStorage.getItem(FREE_RESET_DATE_KEY) || "";
+
+    // Daily reset of free messages
+    let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
+    if (lastFreeResetDate !== today) {
+      usedMessages = 0;
+      localStorage.setItem("lmc_usedMessages", "0");
+      localStorage.setItem(FREE_RESET_DATE_KEY, today);
+    }
+    let locked = usedMessages >= MAX_FREE_MESSAGES;
 
     const paywallText = `
 You’ve reached your free messages for now 💛
@@ -554,13 +563,11 @@ This pause is healing you.
       if (checkinStartBtn) {
         checkinStartBtn.onclick = () => {
           localStorage.setItem(CHECKIN_DATE_KEY, today);
-          checkinBanner.style.display = "flex";
-          checkinBanner.style.opacity = "0";
-          checkinBanner.style.pointerEvents = "none";
           checkinBanner.style.display = "none";
+
           addMessage(
             "bot",
-            "Let’s take a small moment just for you today 🌱\n\nHow are you truly feeling as you read this?"
+            "Let’s take a small moment just for you today 🌱\n\nIf you want, answer these three things in your own words:\n\n1) In 1–3 words, how would you name your mood today?\n2) Where do you feel it the most in your body?\n3) What’s the heaviest thing on your mind right now?"
           );
         };
       }
