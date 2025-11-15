@@ -549,6 +549,24 @@ This pause is healing you.
       return shouldUseSpanishPaywall() ? spanishLockedReminder : englishLockedReminder;
     }
 
+    function getErrorText(baseType) {
+      const isSpanish = shouldUseSpanishPaywall();
+      const offline = !navigator.onLine;
+      if (baseType === "server") {
+        return isSpanish
+          ? "Lo siento mi amor, parece que hubo un problema en el servidor. Intenta de nuevo en un momento, por favor."
+          : "I’m sorry, it looks like something went wrong on the server. Please try again in a moment.";
+      }
+      if (offline) {
+        return isSpanish
+          ? "Parece que no hay conexión a internet en este momento. Verifica tu conexión y vuelve a intentar, mi amor."
+          : "It looks like there’s no internet connection right now. Please check your connection and try again.";
+      }
+      return isSpanish
+        ? "Lo siento mi amor, parece que hubo un problema con la conexión. Intenta de nuevo en un momento, por favor."
+        : "I’m sorry, it looks like there was a problem with the connection. Please try again in a moment.";
+    }
+
     function addMessage(sender, text) {
       const div = document.createElement("div");
       div.className = "message " + sender;
@@ -616,12 +634,15 @@ This pause is healing you.
             lockChat(true);
           }
         } else if (data.error) {
-          addMessage("bot", "I’m sorry, something went wrong on the server: " + data.error);
+          addMessage("bot", getErrorText("server"));
         } else {
-          addMessage("bot", "I’m sorry, I didn’t understand the server response.");
+          const generic = shouldUseSpanishPaywall()
+            ? "Lo siento, no entendí la respuesta del servidor. Intenta de nuevo por favor."
+            : "I’m sorry, I didn’t understand the server response. Please try again.";
+          addMessage("bot", generic);
         }
       } catch (err) {
-        addMessage("bot", "I’m sorry, something went wrong connecting to the server. Try again in a moment.");
+        addMessage("bot", getErrorText("network"));
       } finally {
         showTyping(false);
       }
