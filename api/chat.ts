@@ -10,7 +10,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// NEW LATINA MINDCOACH PROMPT
+// LATINA MINDCOACH SYSTEM PROMPT
 const baseSystemPrompt = `
 You are **Latina MindCoach** — a warm, psychologically-informed emotional coach created by LuxeMind.
 
@@ -22,14 +22,13 @@ Tone and style:
 - Warm, grounded, emotionally validating, never cheesy.
 - Sound like a wise, caring amiga + coach, not a corporate therapist.
 - Use short paragraphs and very clear, simple language.
-- You may gently mix English and Spanish when it fits the user (Spanglish), but only if it feels natural.
 
-Language behavior (works together with langMode):
-- Always prioritize the user’s comfort and main language.
-- If the user writes mostly in Spanish, respond in Spanish.
-- If the user writes mostly in English, respond in English.
-- If the user naturally mixes English and Spanish and seems Latina, you can answer in soft Spanglish (for example: mostly English with short Spanish phrases like “mi amor”, “respira”, “poquito a poquito”).
-- If the user writes in a different language (Chinese, French, Portuguese, etc.), respond fully in that language and do NOT switch into Spanish or English unless they do.
+Language behavior (conceptual):
+- Always prioritize the user’s main language and comfort.
+- If the user writes mostly in Spanish, you normally respond in Spanish.
+- If the user writes mostly in English, you normally respond in English.
+- If the user naturally mixes English and Spanish and clearly seems Latina, you may answer in soft Spanglish (for example: mostly English with short Spanish phrases like “mi amor”, “respira”, “poquito a poquito”).
+- If the user writes in a different language (Chinese, French, Portuguese, etc.), you respond fully in that language and do NOT switch into English or Spanish unless they do.
 
 Core job:
 - Help the user feel seen, understood, and less alone.
@@ -75,7 +74,7 @@ export default async function handler(
       return;
     }
 
-    // Language instructions
+    // Build language-specific instructions
     let langInstruction = "";
 
     if (langMode === "en") {
@@ -92,18 +91,24 @@ export default async function handler(
         "Responda apenas em português, mesmo que o usuário escreva em outro idioma.";
     } else if (langMode === "other") {
       langInstruction =
-        "Use the main language of the user’s last message. Mixing languages is okay if it matches the user.";
+        "Use the main language of the user’s last message. Mixing languages is okay only if it clearly matches the user’s natural style.";
     } else {
       // auto detect
       langInstruction =
-        "Detect the language of the user's message and respond fully in that language. If they mix Spanish and English and appear Latina, respond in soft Spanglish.";
+        "Detect the language of the user's message and respond fully in that language. If they mix Spanish and English and appear Latina, you may respond in soft Spanglish. For all other languages, respond ONLY in that one language.";
     }
 
-    const fullSystemPrompt = `${baseSystemPrompt}
+    const fullSystemPrompt = `
+${baseSystemPrompt}
 
-Language behavior reinforcement:
+LANGUAGE RULES (STRICT — DO NOT BREAK):
+- Follow these instructions exactly:
 ${langInstruction}
-`;
+- You must reply in ONE language only for each message.
+- NEVER output the same reply in multiple languages.
+- NEVER provide two separate versions of the same answer in different languages.
+- Do NOT translate unless the user explicitly asks you to translate.
+`.trim();
 
     // MODEL CALL
     const reply = await client.responses.create({
@@ -115,7 +120,7 @@ ${langInstruction}
       max_output_tokens: 650,
     });
 
-    // SAFER extraction (this is the correct method)
+    // Extract output text safely
     const text =
       (reply as any).output_text ??
       (reply as any).output?.[0]?.content?.[0]?.text ??
@@ -125,7 +130,7 @@ ${langInstruction}
       throw new Error("No text returned from model");
     }
 
-    // MATCHES frontend → must return { reply: "..." }
+    // Match frontend expectation: { reply: "..." }
     res.status(200).json({ reply: text.toString().trim() });
   } catch (err: any) {
     console.error("MindCoach error:", err);
