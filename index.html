@@ -64,6 +64,45 @@
       border-color: #525f7f;
     }
 
+    /* Daily check-in banner */
+    #checkin-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fffaf2;
+      font-size: 13px;
+    }
+
+    #checkin-banner p {
+      margin: 0;
+      flex: 1;
+      color: #444;
+    }
+
+    #checkin-banner-buttons {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    #checkin-banner-buttons button {
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-size: 11px;
+      border: 1px solid #e0a65a;
+      background: #ffe2b8;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #checkin-banner-buttons button.secondary {
+      border-color: #ccc;
+      background: #f7f7f7;
+    }
+
     #chat-container {
       flex: 1;
       overflow-y: auto;
@@ -195,6 +234,15 @@
     </div>
   </div>
 
+  <!-- Daily check-in banner (once per day) -->
+  <div id="checkin-banner">
+    <p>Take 30 seconds just for yourself today 💛</p>
+    <div id="checkin-banner-buttons">
+      <button id="checkin-start-btn" type="button">Start today’s check-in</button>
+      <button id="checkin-skip-btn" type="button" class="secondary">Skip</button>
+    </div>
+  </div>
+
   <div id="mood-bar">
     <p>How are you feeling right now?</p>
     <div id="mood-buttons">
@@ -226,6 +274,9 @@
     const pauseBtn = document.getElementById("pause-btn");
     const langButtonsContainer = document.getElementById("lang-buttons");
     const langButtons = langButtonsContainer.querySelectorAll("button");
+    const checkinBanner = document.getElementById("checkin-banner");
+    const checkinStartBtn = document.getElementById("checkin-start-btn");
+    const checkinSkipBtn = document.getElementById("checkin-skip-btn");
 
     let langMode = "auto";
 
@@ -233,7 +284,10 @@
     let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
     let locked = usedMessages >= MAX_FREE_MESSAGES;
 
-    // Paywall text now always in English to avoid language conflicts
+    const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
+    const today = new Date().toISOString().slice(0, 10);
+    const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
+
     const paywallText = `
 You’ve reached your free messages for now 💛
 
@@ -311,7 +365,6 @@ This pause is healing you.
         if (data.reply) {
           addMessage("bot", data.reply);
 
-          // count successful AI replies
           usedMessages += 1;
           localStorage.setItem("lmc_usedMessages", String(usedMessages));
 
@@ -384,6 +437,33 @@ This pause is healing you.
     input.addEventListener("keydown", e => {
       if (e.key === "Enter") sendMessage();
     });
+
+    // Daily check-in banner logic (once per day)
+    if (checkinBanner) {
+      if (lastCheckinDate !== today) {
+        checkinBanner.style.display = "flex";
+      } else {
+        checkinBanner.style.display = "none";
+      }
+
+      if (checkinStartBtn) {
+        checkinStartBtn.onclick = () => {
+          localStorage.setItem(CHECKIN_DATE_KEY, today);
+          checkinBanner.style.display = "none";
+          addMessage(
+            "bot",
+            "Let’s take a small moment just for you today 🌱\n\nHow are you truly feeling as you read this?"
+          );
+        };
+      }
+
+      if (checkinSkipBtn) {
+        checkinSkipBtn.onclick = () => {
+          localStorage.setItem(CHECKIN_DATE_KEY, today);
+          checkinBanner.style.display = "none";
+        };
+      }
+    }
 
     // Initial greeting
     addMessage(
