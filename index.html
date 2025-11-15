@@ -366,11 +366,33 @@
       color: var(--text-softer);
       border-top: 1px solid var(--border-subtle);
       background: #fafbff;
+      text-align: center;
     }
 
-    stripe-buy-button {
-      margin: 2px auto 14px;
-      display: block;
+    /* UPGRADE BUTTON (Stripe payment link) */
+    #upgrade-container {
+      padding: 8px 20px 14px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: center;
+    }
+
+    #upgrade-button {
+      padding: 10px 22px;
+      font-size: 14px;
+      border-radius: 999px;
+      border: none;
+      background: #f5a623;
+      color: #ffffff;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
+      white-space: nowrap;
+    }
+
+    #upgrade-button:hover {
+      background: #e4961e;
     }
 
     /* LOCKED TOAST */
@@ -460,14 +482,11 @@
       Unlimited daily support is available with the button below 💛
     </div>
 
-    <!-- STRIPE BUY BUTTON -->
-    <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-
-    <stripe-buy-button
-      id="upgrade-button"
-      buy-button-id="buy_btn_1STXD50YpWkVmsiLFRmgapRw"
-      publishable-key="pk_live_51STDB8OYpWkVmsiLwKPILRZMTvLu8FA21IrgrfoACFtO5qLaA1ofHHTPSJ0SWW6To6Z3MDZJ8yPDreptWiX0ta4L00Xrlp4X">
-    </stripe-buy-button>
+    <div id="upgrade-container">
+      <button id="upgrade-button" type="button">
+        Unlock unlimited support 💛
+      </button>
+    </div>
   </div>
 
   <!-- Locked toast -->
@@ -485,6 +504,9 @@
     const checkinSkipBtn = document.getElementById("checkin-skip-btn");
     const typingIndicator = document.getElementById("typing-indicator");
     const lockedToast = document.getElementById("locked-toast");
+    const upgradeButton = document.getElementById("upgrade-button");
+
+    const PAYMENT_LINK = "https://buy.stripe.com/6oUeV56dcgwFcn5axv63K00";
 
     let langMode = "auto";
     let lastUserMessage = "";
@@ -497,7 +519,7 @@
     const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
     const lastFreeResetDate = localStorage.getItem(FREE_RESET_DATE_KEY) || "";
 
-    // Daily reset
+    // Daily free-message reset
     let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
     if (lastFreeResetDate !== today) {
       usedMessages = 0;
@@ -611,6 +633,10 @@ This pause is healing you.
       }, 2400);
     }
 
+    function openCheckout() {
+      window.location.href = PAYMENT_LINK;
+    }
+
     function addMessage(sender, text) {
       const div = document.createElement("div");
       div.className = "message " + sender;
@@ -640,7 +666,7 @@ This pause is healing you.
     async function sendMessage() {
       const text = input.value.trim();
 
-      // If locked, just guide to upgrade
+      // If locked, just guide to upgrade and open checkout on demand
       if (locked) {
         scrollToUpgrade();
         showLockedToast();
@@ -725,6 +751,10 @@ This pause is healing you.
     input.addEventListener("keydown", e => {
       if (e.key === "Enter") sendMessage();
     });
+
+    if (upgradeButton) {
+      upgradeButton.onclick = openCheckout;
+    }
 
     // Daily check-in banner
     if (checkinBanner) {
