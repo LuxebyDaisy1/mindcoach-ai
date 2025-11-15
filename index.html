@@ -205,7 +205,7 @@
     #chat-container {
       flex: 1;
       overflow-y: auto;
-      padding: 18px 20px 10px;
+      padding: 18px 20px 4px;
       display: flex;
       flex-direction: column;
       background: radial-gradient(circle at top, #f9f7ff, #f7f6ff 40%, #f6f7fb 80%);
@@ -235,6 +235,61 @@
       border-bottom-left-radius: 4px;
       border: 1px solid #e3e5f5;
       color: #111827;
+    }
+
+    /* Typing indicator */
+    #typing-indicator {
+      display: none;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+
+    #typing-indicator .bubble {
+      background: #ffffff;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e3e5f5;
+      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+
+    #typing-indicator span {
+      font-size: 11px;
+      color: var(--text-softer);
+    }
+
+    .dots {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #c7cbe8;
+      animation: bounce 1s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    .dot:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+      }
+      40% {
+        transform: translateY(-3px);
+        opacity: 1;
+      }
     }
 
     /* INPUT / CONTROLS */
@@ -351,7 +406,19 @@
       </div>
     </div>
 
-    <div id="chat-container"></div>
+    <div id="chat-container">
+      <!-- typing indicator -->
+      <div id="typing-indicator">
+        <div class="bubble">
+          <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span>MindCoach is thinking…</span>
+        </div>
+      </div>
+    </div>
 
     <div id="input-container">
       <input id="user-input" type="text" placeholder="Tell me how you feel right now…" />
@@ -382,8 +449,10 @@
     const checkinBanner = document.getElementById("checkin-banner");
     const checkinStartBtn = document.getElementById("checkin-start-btn");
     const checkinSkipBtn = document.getElementById("checkin-skip-btn");
+    const typingIndicator = document.getElementById("typing-indicator");
 
     let langMode = "auto";
+    let lastUserMessage = ""; // track last user input for paywall language
 
     const MAX_FREE_MESSAGES = 3; // number of AI replies before lock
     const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
@@ -402,12 +471,29 @@
     }
     let locked = usedMessages >= MAX_FREE_MESSAGES;
 
-    const paywallText = `
+    // Paywall texts
+    const englishPaywallText = `
 You’ve reached your free messages for now 💛
 
 To keep receiving emotional support from Latina MindCoach whenever you need it, unlock unlimited access with the button below.
 
 I’ll be here when you’re ready.
+`.trim();
+
+    const spanishPaywallText = `
+Mi amor, ya usaste tus mensajes gratuitos de hoy 💛
+
+Para seguir recibiendo apoyo emocional de Latina MindCoach cuando lo necesites, desbloquea acceso ilimitado con el botón de abajo.
+
+Aquí estaré cuando estés lista.
+`.trim();
+
+    const englishLockedReminder = `
+To keep chatting with me, unlock unlimited emotional support using the button below 💛
+`.trim();
+
+    const spanishLockedReminder = `
+Para seguir hablando conmigo, desbloquea apoyo emocional ilimitado usando el botón de aquí abajo 💛
 `.trim();
 
     const laPausaText = `
@@ -430,11 +516,51 @@ You are not alone.
 This pause is healing you.
 `.trim();
 
+    // crude Spanish detection for AUTO mode
+    function detectIfSpanish(text) {
+      const spanishKeywords = [
+        "hola","buenos","buenas","estoy","siento","gracias","porque","por qué",
+        "cómo","como","que","qué","dónde","cuando","cuándo","amor","triste",
+        "ansiosa","ansioso","cansada","cansado","miedo","preocupada","preocupado"
+      ];
+      const lower = text.toLowerCase();
+      let hits = 0;
+      for (const word of spanishKeywords) {
+        if (lower.includes(word)) hits++;
+      }
+      return hits >= 2;
+    }
+
+    function shouldUseSpanishPaywall() {
+      if (langMode === "es") return true;
+      if (langMode === "en") return false;
+      if (langMode === "auto") {
+        if (!lastUserMessage) return false; // default EN if nothing yet
+        return detectIfSpanish(lastUserMessage);
+      }
+      return false;
+    }
+
+    function getPaywallText() {
+      return shouldUseSpanishPaywall() ? spanishPaywallText : englishPaywallText;
+    }
+
+    function getLockedReminderText() {
+      return shouldUseSpanishPaywall() ? spanishLockedReminder : englishLockedReminder;
+    }
+
     function addMessage(sender, text) {
       const div = document.createElement("div");
       div.className = "message " + sender;
       div.textContent = text;
-      chatContainer.appendChild(div);
+      // insert before typing indicator node, so indicator stays at bottom
+      chatContainer.insertBefore(div, typingIndicator);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function showTyping(show) {
+      if (!typingIndicator) return;
+      typingIndicator.style.display = show ? "block" : "none";
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
@@ -442,10 +568,12 @@ This pause is healing you.
       locked = true;
       localStorage.setItem("lmc_usedMessages", String(MAX_FREE_MESSAGES));
       if (showMessage) {
-        addMessage("bot", paywallText);
+        addMessage("bot", getPaywallText());
       }
       input.disabled = true;
-      input.placeholder = "Unlock unlimited support with the button below 💛";
+      input.placeholder = shouldUseSpanishPaywall()
+        ? "Desbloquea apoyo ilimitado con el botón de abajo 💛"
+        : "Unlock unlimited support with the button below 💛";
       btn.disabled = true;
       btn.textContent = "Locked";
     }
@@ -454,16 +582,18 @@ This pause is healing you.
       const text = input.value.trim();
       if (!text) return;
 
+      // track last user message for paywall language
+      lastUserMessage = text;
+
       if (locked) {
-        addMessage(
-          "bot",
-          "To keep chatting with me, unlock unlimited emotional support using the button below 💛"
-        );
+        addMessage("bot", getLockedReminderText());
         return;
       }
 
       addMessage("user", text);
       input.value = "";
+
+      showTyping(true);
 
       try {
         const response = await fetch("/api/chat", {
@@ -492,6 +622,8 @@ This pause is healing you.
         }
       } catch (err) {
         addMessage("bot", "I’m sorry, something went wrong connecting to the server. Try again in a moment.");
+      } finally {
+        showTyping(false);
       }
     }
 
@@ -589,6 +721,8 @@ This pause is healing you.
     // If already locked from previous session, lock UI immediately (no extra paywall message)
     if (locked) {
       lockChat(false);
+    } else {
+      showTyping(false);
     }
   </script>
 </body>
