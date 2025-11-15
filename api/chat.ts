@@ -10,7 +10,7 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// LATINA MINDCOACH SYSTEM PROMPT – PERSONA ONLY, NO LANGUAGE MIXING HERE
+// LATINA MINDCOACH PERSONA (NO LANGUAGE RULES HERE)
 const baseSystemPrompt = `
 You are Latina MindCoach — a warm, psychologically-informed emotional coach created by LuxeMind.
 
@@ -74,53 +74,55 @@ export default async function handler(
     if (langMode === "en") {
       langInstruction = `
 LANGUAGE RULES:
-- Reply only in English.
-- Do not switch to any other language.
-- Do NOT provide translations unless the user explicitly asks for a translation.
-- Provide a single, cohesive answer (no repeated versions in different languages).
+- Reply ONLY in English.
+- Do NOT switch to any other language.
+- Do NOT translate unless the user explicitly asks for a translation.
+- Provide ONE single answer, not multiple versions in different languages.
 `.trim();
     } else if (langMode === "es") {
       langInstruction = `
 REGLAS DE IDIOMA:
-- Responde solo en español.
+- Responde SOLO en español.
 - No cambies a ningún otro idioma.
-- NO des traducciones a menos que el usuario las pida explícitamente.
-- Da una sola respuesta coherente (no repitas la misma respuesta en varios idiomas).
+- NO traduzcas nada a menos que el usuario lo pida claramente.
+- Da UNA sola respuesta, no varias versiones en distintos idiomas.
 `.trim();
     } else if (langMode === "fr") {
       langInstruction = `
 RÈGLES DE LANGUE:
-- Réponds uniquement en français.
+- Réponds UNIQUEMENT en français.
 - Ne change pas de langue.
-- Ne fournis pas de traductions sauf si l'utilisateur les demande clairement.
-- Donne une seule réponse cohérente (pas plusieurs versions dans différentes langues).
+- Ne traduis pas sauf si l'utilisateur le demande explicitement.
+- Donne UNE seule réponse, pas plusieurs versions dans différentes langues.
 `.trim();
     } else if (langMode === "pt") {
       langInstruction = `
 REGRAS DE IDIOMA:
-- Responda apenas em português.
+- Responda APENAS em português.
 - Não mude para outro idioma.
-- Não forneça traduções a menos que o usuário peça explicitamente.
-- Dê uma resposta única e coerente (sem múltiplas versões em idiomas diferentes).
+- Não traduza nada a menos que o usuário peça explicitamente.
+- Dê UMA única resposta, não várias versões em idiomas diferentes.
 `.trim();
     } else if (langMode === "other") {
       langInstruction = `
 LANGUAGE RULES:
-- Use the main language of the user's latest message.
-- Reply only in that language.
-- Do not mix languages or repeat the same answer in multiple languages.
-- Do not translate unless the user explicitly asks for a translation.
+- Use the main language of the user's LATEST message.
+- Reply ONLY in that language.
+- Do NOT mix languages.
+- Do NOT provide translations unless the user clearly asks for them.
+- Give ONE answer in ONE language.
 `.trim();
     } else {
-      // AUTO – STRICT: detect latest message language and use ONLY that
+      // AUTO – STRICT: decide language ONLY from the latest message
       langInstruction = `
 LANGUAGE RULES (AUTO, STRICT):
-- Detect the language of the user's latest message.
-- Reply only in that language.
-- Ignore the languages of earlier messages when choosing the reply language.
+- Look ONLY at the user's LATEST message to decide the reply language.
+- Ignore the language of ALL earlier messages when choosing your reply language.
+- Ignore cultural background when choosing the reply language.
+- Detect the language of the latest message and reply ONLY in that language.
 - Do NOT mix languages in the same reply.
-- Do NOT provide repeated translations of the same answer.
-- Do NOT translate unless the user clearly asks you to translate.
+- Do NOT provide translations unless the user clearly asks you to translate.
+- Give ONE answer in ONE language every time.
 `.trim();
     }
 
@@ -130,7 +132,6 @@ ${baseSystemPrompt}
 ${langInstruction}
 `.trim();
 
-    // MODEL CALL
     const reply = await client.responses.create({
       model: "gpt-4.1-mini",
       input: [
@@ -140,7 +141,6 @@ ${langInstruction}
       max_output_tokens: 650,
     });
 
-    // Extract output text safely
     const text =
       (reply as any).output_text ??
       (reply as any).output?.[0]?.content?.[0]?.text ??
@@ -150,7 +150,6 @@ ${langInstruction}
       throw new Error("No text returned from model");
     }
 
-    // Match frontend expectation: { reply: "..." }
     res.status(200).json({ reply: text.toString().trim() });
   } catch (err: any) {
     console.error("MindCoach error:", err);
