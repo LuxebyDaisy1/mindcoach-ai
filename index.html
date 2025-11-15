@@ -177,7 +177,7 @@
     #mood-bar p {
       margin: 0 0 6px;
       font-size: 13px;
-      color: #var(--text-soft);
+      color: var(--text-soft);
     }
 
     #mood-buttons {
@@ -193,7 +193,7 @@
       font-size: 12px;
       background: #f6f7ff;
       cursor: pointer;
-      color: #var(--text-soft);
+      color: var(--text-soft);
     }
 
     #mood-buttons button:hover {
@@ -557,7 +557,7 @@ This pause is healing you.
       }
       return isSpanish
         ? "Lo siento mi amor, parece que hubo un problema con la conexión. Intenta de nuevo en un momento, por favor."
-        : "I’m sorry, it looks like there was a problem with the connection. Please try again in a moment.";
+        : "I’m sorry, it looks like there was a problem with the connection. Please try again.";
     }
 
     function scrollToUpgrade() {
@@ -595,14 +595,16 @@ This pause is healing you.
 
     async function sendMessage() {
       const text = input.value.trim();
-      if (!text) return;
 
-      lastUserMessage = text;
-
+      // IMPORTANT: if locked, always just scroll to upgrade
       if (locked) {
         scrollToUpgrade();
         return;
       }
+
+      if (!text) return;
+
+      lastUserMessage = text;
 
       addMessage("user", text);
       input.value = "";
