@@ -1,6 +1,7 @@
-I// api/chat.ts
-
-import type { NextApiRequest as VercelRequest, NextApiResponse as VercelResponse } from "next";
+import type {
+  NextApiRequest as VercelRequest,
+  NextApiResponse as VercelResponse,
+} from "next";
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -100,13 +101,18 @@ ${langInstruction}
       max_output_tokens: 650,
     });
 
-    // Extract text from the Responses API output
+    // SAFER extraction: prefer output_text, then fall back
     const text =
-      (reply.output && (reply.output[0] as any).content[0].text) ||
-      (reply as any).output_text ||
+      (reply as any).output_text ??
+      (reply as any).output?.[0]?.content?.[0]?.text ??
       "";
 
-    res.status(200).json({ text: text.toString().trim() });
+    if (!text) {
+      throw new Error("No text returned from model");
+    }
+
+    // IMPORTANT: match the frontend shape -> { reply: "..." }
+    res.status(200).json({ reply: text.toString().trim() });
   } catch (err: any) {
     console.error("MindCoach error:", err);
     res
