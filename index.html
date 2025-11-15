@@ -160,8 +160,22 @@
       white-space: nowrap;
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #paywall-note {
+      padding: 8px 20px 4px;
+      font-size: 12px;
+      color: #555;
+      border-top: 1px solid #f3f3f3;
+      background: #ffffff;
+    }
+
     stripe-buy-button {
-      margin: 8px auto 16px;
+      margin: 4px auto 16px;
+      display: block;
     }
   </style>
 </head>
@@ -201,6 +215,10 @@
     <button id="send-btn" type="button">Send</button>
   </div>
 
+  <div id="paywall-note">
+    Unlimited daily support is available with the button below 💛
+  </div>
+
   <script>
     const chatContainer = document.getElementById("chat-container");
     const input = document.getElementById("user-input");
@@ -210,6 +228,18 @@
     const langButtons = langButtonsContainer.querySelectorAll("button");
 
     let langMode = "auto";
+
+    const MAX_FREE_MESSAGES = 3; // number of AI replies before lock
+    let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
+    let locked = usedMessages >= MAX_FREE_MESSAGES;
+
+    const paywallText = `
+Mi amor, ya usaste tus mensajes gratuitos de hoy 💛
+
+Para seguir recibiendo apoyo emocional ilimitado, usa el botón de abajo para desbloquear tu acceso.
+
+I’ll still be here when you’re ready.
+`.trim();
 
     const laPausaText = `
 Breathe with me for a moment.
@@ -239,9 +269,29 @@ This pause is healing you.
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
+    function lockChat(showMessage = true) {
+      locked = true;
+      localStorage.setItem("lmc_usedMessages", String(MAX_FREE_MESSAGES));
+      if (showMessage) {
+        addMessage("bot", paywallText);
+      }
+      input.disabled = true;
+      input.placeholder = "Unlock unlimited support with the button below 💛";
+      btn.disabled = true;
+      btn.textContent = "Locked";
+    }
+
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
+
+      if (locked) {
+        addMessage(
+          "bot",
+          "Mi amor, para seguir hablando conmigo, necesitas desbloquear tu apoyo ilimitado con el botón de abajo 💛"
+        );
+        return;
+      }
 
       addMessage("user", text);
       input.value = "";
@@ -259,6 +309,14 @@ This pause is healing you.
 
         if (data.reply) {
           addMessage("bot", data.reply);
+
+          // count successful AI replies
+          usedMessages += 1;
+          localStorage.setItem("lmc_usedMessages", String(usedMessages));
+
+          if (usedMessages >= MAX_FREE_MESSAGES && !locked) {
+            lockChat(true);
+          }
         } else if (data.error) {
           addMessage("bot", "Lo siento mi amor, algo falló: " + data.error);
         } else {
@@ -303,11 +361,11 @@ This pause is healing you.
     function setLangMode(mode) {
       langMode = mode;
 
-      langButtons.forEach(btn => {
-        if (btn.getAttribute("data-mode") === mode) {
-          btn.classList.add("active");
+      langButtons.forEach(btnEl => {
+        if (btnEl.getAttribute("data-mode") === mode) {
+          btnEl.classList.add("active");
         } else {
-          btn.classList.remove("active");
+          btnEl.classList.remove("active");
         }
       });
     }
@@ -331,6 +389,11 @@ This pause is healing you.
       "bot",
       "Hola mi amor 💛 Soy tu Latina MindCoach. How are you feeling right now — anxious, overwhelmed, sad, angry, numb, or you don’t know?"
     );
+
+    // If already locked from previous session, lock UI immediately (no extra paywall message)
+    if (locked) {
+      lockChat(false);
+    }
   </script>
 
   <!-- STRIPE BUY BUTTON -->
