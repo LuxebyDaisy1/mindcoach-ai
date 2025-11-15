@@ -332,14 +332,20 @@
       background: var(--accent);
       color: #ffffff;
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+      transition: background 0.15s ease, opacity 0.15s ease;
     }
 
-    #send-btn:hover:not(:disabled) {
+    #send-btn.locked {
+      background: #9ca3af;
+      box-shadow: none;
+    }
+
+    #send-btn:hover:not(.locked) {
       background: var(--accent-strong);
     }
 
     #pause-btn {
-      background: var(--pause);
+      background: #f5a623;
       color: #fff;
       box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
     }
@@ -434,6 +440,7 @@
     <script async src="https://js.stripe.com/v3/buy-button.js"></script>
 
     <stripe-buy-button
+      id="upgrade-button"
       buy-button-id="buy_btn_1STXD50YpWkVmsiLFRmgapRw"
       publishable-key="pk_live_51STDB8OYpWkVmsiLwKPILRZMTvLu8FA21IrgrfoACFtO5qLaA1ofHHTPSJ0SWW6To6Z3MDZJ8yPDreptWiX0ta4L00Xrlp4X">
     </stripe-buy-button>
@@ -567,6 +574,13 @@ This pause is healing you.
         : "I’m sorry, it looks like there was a problem with the connection. Please try again in a moment.";
     }
 
+    function scrollToUpgrade() {
+      const upgrade = document.getElementById("upgrade-button");
+      if (upgrade && typeof upgrade.scrollIntoView === "function") {
+        upgrade.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
     function addMessage(sender, text) {
       const div = document.createElement("div");
       div.className = "message " + sender;
@@ -592,19 +606,19 @@ This pause is healing you.
       input.placeholder = shouldUseSpanishPaywall()
         ? "Desbloquea apoyo ilimitado con el botón de abajo 💛"
         : "Unlock unlimited support with the button below 💛";
-      btn.disabled = true;
       btn.textContent = "Locked";
+      btn.classList.add("locked");
     }
 
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
 
-      // track last user message for paywall language
       lastUserMessage = text;
 
       if (locked) {
         addMessage("bot", getLockedReminderText());
+        scrollToUpgrade();
         return;
       }
 
@@ -698,11 +712,26 @@ This pause is healing you.
       }
     });
 
-    btn.onclick = sendMessage;
+    btn.onclick = () => {
+      if (locked) {
+        addMessage("bot", getLockedReminderText());
+        scrollToUpgrade();
+        return;
+      }
+      sendMessage();
+    };
+
     pauseBtn.onclick = triggerLaPausa;
 
     input.addEventListener("keydown", e => {
-      if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter") {
+        if (locked) {
+          addMessage("bot", getLockedReminderText());
+          scrollToUpgrade();
+          return;
+        }
+        sendMessage();
+      }
     });
 
     // Daily check-in banner logic (once per day)
