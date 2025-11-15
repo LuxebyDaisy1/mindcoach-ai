@@ -18,7 +18,7 @@
     }
 
     #header {
-      padding: 16px 20px 8px;
+      padding: 12px 20px 6px;
       border-bottom: 1px solid #eee;
       background: #ffffff;
     }
@@ -33,6 +33,35 @@
       margin: 4px 0 0;
       font-size: 14px;
       color: #555;
+    }
+
+    #lang-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 20px 8px;
+      border-bottom: 1px solid #f3f3f3;
+      background: #ffffff;
+    }
+
+    #lang-bar span {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #lang-buttons button {
+      border: 1px solid #ccc;
+      border-radius: 14px;
+      padding: 4px 8px;
+      font-size: 11px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+
+    #lang-buttons button.active {
+      background: #525f7f;
+      color: #fff;
+      border-color: #525f7f;
     }
 
     #chat-container {
@@ -143,6 +172,15 @@
     <p>For Latinas who carry everything.</p>
   </div>
 
+  <div id="lang-bar">
+    <span>Language mode:</span>
+    <div id="lang-buttons">
+      <button data-mode="auto" class="active">Auto</button>
+      <button data-mode="en">EN</button>
+      <button data-mode="es">ES</button>
+    </div>
+  </div>
+
   <div id="mood-bar">
     <p>How are you feeling right now?</p>
     <div id="mood-buttons">
@@ -168,6 +206,10 @@
     const input = document.getElementById("user-input");
     const btn = document.getElementById("send-btn");
     const pauseBtn = document.getElementById("pause-btn");
+    const langButtonsContainer = document.getElementById("lang-buttons");
+    const langButtons = langButtonsContainer.querySelectorAll("button");
+
+    let langMode = "auto";
 
     const laPausaText = `
 Breathe with me for a moment.
@@ -210,11 +252,18 @@ This pause is healing you.
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify({ message: text, langMode })
         });
 
         const data = await response.json();
-        addMessage("bot", data.reply);
+
+        if (data.reply) {
+          addMessage("bot", data.reply);
+        } else if (data.error) {
+          addMessage("bot", "Lo siento mi amor, algo falló: " + data.error);
+        } else {
+          addMessage("bot", "Lo siento mi amor, no entendí la respuesta del servidor.");
+        }
       } catch (err) {
         addMessage("bot", "Lo siento mi amor, algo falló al conectar. Try again in a moment.");
       }
@@ -250,6 +299,25 @@ This pause is healing you.
       input.value = text;
       sendMessage();
     }
+
+    function setLangMode(mode) {
+      langMode = mode;
+
+      langButtons.forEach(btn => {
+        if (btn.getAttribute("data-mode") === mode) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    langButtonsContainer.addEventListener("click", (e) => {
+      if (e.target.tagName.toLowerCase() === "button") {
+        const mode = e.target.getAttribute("data-mode");
+        if (mode) setLangMode(mode);
+      }
+    });
 
     btn.onclick = sendMessage;
     pauseBtn.onclick = triggerLaPausa;
