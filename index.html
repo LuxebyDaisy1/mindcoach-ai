@@ -177,7 +177,7 @@
     #mood-bar p {
       margin: 0 0 6px;
       font-size: 13px;
-      color: var(--text-soft);
+      color: #var(--text-soft);
     }
 
     #mood-buttons {
@@ -193,7 +193,7 @@
       font-size: 12px;
       background: #f6f7ff;
       cursor: pointer;
-      color: var(--text-soft);
+      color: #var(--text-soft);
     }
 
     #mood-buttons button:hover {
@@ -459,9 +459,9 @@
     const typingIndicator = document.getElementById("typing-indicator");
 
     let langMode = "auto";
-    let lastUserMessage = ""; // track last user input for paywall language
+    let lastUserMessage = "";
 
-    const MAX_FREE_MESSAGES = 3; // number of AI replies before lock
+    const MAX_FREE_MESSAGES = 3;
     const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
     const FREE_RESET_DATE_KEY = "lmc_lastFreeResetDate";
 
@@ -469,7 +469,7 @@
     const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
     const lastFreeResetDate = localStorage.getItem(FREE_RESET_DATE_KEY) || "";
 
-    // Daily reset of free messages
+    // Daily reset
     let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
     if (lastFreeResetDate !== today) {
       usedMessages = 0;
@@ -495,14 +495,6 @@ Para seguir recibiendo apoyo emocional de Latina MindCoach cuando lo necesites, 
 Aquí estaré cuando estés lista.
 `.trim();
 
-    const englishLockedReminder = `
-To keep chatting with me, unlock unlimited emotional support using the button below 💛
-`.trim();
-
-    const spanishLockedReminder = `
-Para seguir hablando conmigo, desbloquea apoyo emocional ilimitado usando el botón de aquí abajo 💛
-`.trim();
-
     const laPausaText = `
 Breathe with me for a moment.
 
@@ -523,18 +515,16 @@ You are not alone.
 This pause is healing you.
 `.trim();
 
-    // crude Spanish detection for AUTO mode
+    // Spanish detection
     function detectIfSpanish(text) {
-      const spanishKeywords = [
+      const words = [
         "hola","buenos","buenas","estoy","siento","gracias","porque","por qué",
         "cómo","como","que","qué","dónde","cuando","cuándo","amor","triste",
         "ansiosa","ansioso","cansada","cansado","miedo","preocupada","preocupado"
       ];
       const lower = text.toLowerCase();
       let hits = 0;
-      for (const word of spanishKeywords) {
-        if (lower.includes(word)) hits++;
-      }
+      for (const w of words) if (lower.includes(w)) hits++;
       return hits >= 2;
     }
 
@@ -542,7 +532,7 @@ This pause is healing you.
       if (langMode === "es") return true;
       if (langMode === "en") return false;
       if (langMode === "auto") {
-        if (!lastUserMessage) return false; // default EN if nothing yet
+        if (!lastUserMessage) return false;
         return detectIfSpanish(lastUserMessage);
       }
       return false;
@@ -552,14 +542,10 @@ This pause is healing you.
       return shouldUseSpanishPaywall() ? spanishPaywallText : englishPaywallText;
     }
 
-    function getLockedReminderText() {
-      return shouldUseSpanishPaywall() ? spanishLockedReminder : englishLockedReminder;
-    }
-
-    function getErrorText(baseType) {
+    function getErrorText(kind) {
       const isSpanish = shouldUseSpanishPaywall();
       const offline = !navigator.onLine;
-      if (baseType === "server") {
+      if (kind === "server") {
         return isSpanish
           ? "Lo siento mi amor, parece que hubo un problema en el servidor. Intenta de nuevo en un momento, por favor."
           : "I’m sorry, it looks like something went wrong on the server. Please try again in a moment.";
@@ -576,7 +562,7 @@ This pause is healing you.
 
     function scrollToUpgrade() {
       const upgrade = document.getElementById("upgrade-button");
-      if (upgrade && typeof upgrade.scrollIntoView === "function") {
+      if (upgrade && upgrade.scrollIntoView) {
         upgrade.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
@@ -585,7 +571,6 @@ This pause is healing you.
       const div = document.createElement("div");
       div.className = "message " + sender;
       div.textContent = text;
-      // insert before typing indicator node, so indicator stays at bottom
       chatContainer.insertBefore(div, typingIndicator);
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -599,9 +584,7 @@ This pause is healing you.
     function lockChat(showMessage = true) {
       locked = true;
       localStorage.setItem("lmc_usedMessages", String(MAX_FREE_MESSAGES));
-      if (showMessage) {
-        addMessage("bot", getPaywallText());
-      }
+      if (showMessage) addMessage("bot", getPaywallText());
       input.disabled = true;
       input.placeholder = shouldUseSpanishPaywall()
         ? "Desbloquea apoyo ilimitado con el botón de abajo 💛"
@@ -617,36 +600,27 @@ This pause is healing you.
       lastUserMessage = text;
 
       if (locked) {
-        addMessage("bot", getLockedReminderText());
         scrollToUpgrade();
         return;
       }
 
       addMessage("user", text);
       input.value = "";
-
       showTyping(true);
 
       try {
         const response = await fetch("/api/chat", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, langMode })
         });
-
         const data = await response.json();
 
         if (data.reply) {
           addMessage("bot", data.reply);
-
           usedMessages += 1;
           localStorage.setItem("lmc_usedMessages", String(usedMessages));
-
-          if (usedMessages >= MAX_FREE_MESSAGES && !locked) {
-            lockChat(true);
-          }
+          if (usedMessages >= MAX_FREE_MESSAGES && !locked) lockChat(true);
         } else if (data.error) {
           addMessage("bot", getErrorText("server"));
         } else {
@@ -655,7 +629,7 @@ This pause is healing you.
             : "I’m sorry, I didn’t understand the server response. Please try again.";
           addMessage("bot", generic);
         }
-      } catch (err) {
+      } catch {
         addMessage("bot", getErrorText("network"));
       } finally {
         showTyping(false);
@@ -669,24 +643,12 @@ This pause is healing you.
     function selectMood(mood) {
       let text = "";
       switch (mood) {
-        case "anxious":
-          text = "I’m feeling anxious and my mind is racing.";
-          break;
-        case "overwhelmed":
-          text = "I’m overwhelmed and carrying too much right now.";
-          break;
-        case "sad":
-          text = "I feel sad and low energy today.";
-          break;
-        case "angry":
-          text = "I feel angry and frustrated.";
-          break;
-        case "numb":
-          text = "I feel numb, like I can’t even feel my emotions clearly.";
-          break;
-        case "unknown":
-          text = "I don’t even know how I feel, everything is mixed.";
-          break;
+        case "anxious": text = "I’m feeling anxious and my mind is racing."; break;
+        case "overwhelmed": text = "I’m overwhelmed and carrying too much right now."; break;
+        case "sad": text = "I feel sad and low energy today."; break;
+        case "angry": text = "I feel angry and frustrated."; break;
+        case "numb": text = "I feel numb, like I can’t even feel my emotions clearly."; break;
+        case "unknown": text = "I don’t even know how I feel, everything is mixed."; break;
       }
       if (!text) return;
       input.value = text;
@@ -695,17 +657,12 @@ This pause is healing you.
 
     function setLangMode(mode) {
       langMode = mode;
-
-      langButtons.forEach(btnEl => {
-        if (btnEl.getAttribute("data-mode") === mode) {
-          btnEl.classList.add("active");
-        } else {
-          btnEl.classList.remove("active");
-        }
+      langButtons.forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-mode") === mode);
       });
     }
 
-    langButtonsContainer.addEventListener("click", (e) => {
+    langButtonsContainer.addEventListener("click", e => {
       if (e.target.tagName.toLowerCase() === "button") {
         const mode = e.target.getAttribute("data-mode");
         if (mode) setLangMode(mode);
@@ -713,47 +670,30 @@ This pause is healing you.
     });
 
     btn.onclick = () => {
-      if (locked) {
-        addMessage("bot", getLockedReminderText());
-        scrollToUpgrade();
-        return;
-      }
       sendMessage();
     };
 
     pauseBtn.onclick = triggerLaPausa;
 
     input.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        if (locked) {
-          addMessage("bot", getLockedReminderText());
-          scrollToUpgrade();
-          return;
-        }
-        sendMessage();
-      }
+      if (e.key === "Enter") sendMessage();
     });
 
-    // Daily check-in banner logic (once per day)
+    // Daily check-in banner
     if (checkinBanner) {
       if (lastCheckinDate !== today) {
         checkinBanner.style.display = "flex";
-      } else {
-        checkinBanner.style.display = "none";
       }
-
       if (checkinStartBtn) {
         checkinStartBtn.onclick = () => {
           localStorage.setItem(CHECKIN_DATE_KEY, today);
           checkinBanner.style.display = "none";
-
           addMessage(
             "bot",
             "Let’s take a small moment just for you today 🌱\n\nIf you want, answer these three things in your own words:\n\n1) In 1–3 words, how would you name your mood today?\n2) Where do you feel it the most in your body?\n3) What’s the heaviest thing on your mind right now?"
           );
         };
       }
-
       if (checkinSkipBtn) {
         checkinSkipBtn.onclick = () => {
           localStorage.setItem(CHECKIN_DATE_KEY, today);
@@ -768,12 +708,8 @@ This pause is healing you.
       "Hola mi amor 💛 Soy tu Latina MindCoach. How are you feeling right now — anxious, overwhelmed, sad, angry, numb, or you don’t know?"
     );
 
-    // If already locked from previous session, lock UI immediately (no extra paywall message)
-    if (locked) {
-      lockChat(false);
-    } else {
-      showTyping(false);
-    }
+    // If already locked from previous day
+    if (locked) lockChat(false); else showTyping(false);
   </script>
 </body>
 </html>
