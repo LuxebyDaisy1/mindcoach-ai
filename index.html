@@ -372,6 +372,30 @@
       margin: 2px auto 14px;
       display: block;
     }
+
+    /* LOCKED TOAST */
+    #locked-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(34, 34, 51, 0.92);
+      color: #fefce8;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      max-width: 90%;
+      text-align: center;
+      z-index: 999;
+    }
+
+    #locked-toast.visible {
+      opacity: 1;
+    }
   </style>
 </head>
 
@@ -446,6 +470,9 @@
     </stripe-buy-button>
   </div>
 
+  <!-- Locked toast -->
+  <div id="locked-toast"></div>
+
   <script>
     const chatContainer = document.getElementById("chat-container");
     const input = document.getElementById("user-input");
@@ -457,6 +484,7 @@
     const checkinStartBtn = document.getElementById("checkin-start-btn");
     const checkinSkipBtn = document.getElementById("checkin-skip-btn");
     const typingIndicator = document.getElementById("typing-indicator");
+    const lockedToast = document.getElementById("locked-toast");
 
     let langMode = "auto";
     let lastUserMessage = "";
@@ -542,6 +570,13 @@ This pause is healing you.
       return shouldUseSpanishPaywall() ? spanishPaywallText : englishPaywallText;
     }
 
+    function getLockedToastText() {
+      const isSpanish = shouldUseSpanishPaywall();
+      return isSpanish
+        ? "Toca el botón amarillo de abajo para desbloquear apoyo ilimitado 💛"
+        : "Tap the yellow button below to unlock unlimited support 💛";
+    }
+
     function getErrorText(kind) {
       const isSpanish = shouldUseSpanishPaywall();
       const offline = !navigator.onLine;
@@ -565,6 +600,15 @@ This pause is healing you.
       if (upgrade && upgrade.scrollIntoView) {
         upgrade.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+    }
+
+    function showLockedToast() {
+      if (!lockedToast) return;
+      lockedToast.textContent = getLockedToastText();
+      lockedToast.classList.add("visible");
+      setTimeout(() => {
+        lockedToast.classList.remove("visible");
+      }, 2400);
     }
 
     function addMessage(sender, text) {
@@ -596,9 +640,10 @@ This pause is healing you.
     async function sendMessage() {
       const text = input.value.trim();
 
-      // IMPORTANT: if locked, always just scroll to upgrade
+      // If locked, just guide to upgrade
       if (locked) {
         scrollToUpgrade();
+        showLockedToast();
         return;
       }
 
