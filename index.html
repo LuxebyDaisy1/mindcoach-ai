@@ -233,12 +233,13 @@
     let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
     let locked = usedMessages >= MAX_FREE_MESSAGES;
 
+    // Paywall text now always in English to avoid language conflicts
     const paywallText = `
-Mi amor, ya usaste tus mensajes gratuitos de hoy 💛
+You’ve reached your free messages for now 💛
 
-Para seguir recibiendo apoyo emocional ilimitado, usa el botón de abajo para desbloquear tu acceso.
+To keep receiving emotional support from Latina MindCoach whenever you need it, unlock unlimited access with the button below.
 
-I’ll still be here when you’re ready.
+I’ll be here when you’re ready.
 `.trim();
 
     const laPausaText = `
@@ -288,7 +289,7 @@ This pause is healing you.
       if (locked) {
         addMessage(
           "bot",
-          "Mi amor, para seguir hablando conmigo, necesitas desbloquear tu apoyo ilimitado con el botón de abajo 💛"
+          "To keep chatting with me, unlock unlimited emotional support using the button below 💛"
         );
         return;
       }
@@ -318,12 +319,12 @@ This pause is healing you.
             lockChat(true);
           }
         } else if (data.error) {
-          addMessage("bot", "Lo siento mi amor, algo falló: " + data.error);
+          addMessage("bot", "I’m sorry, something went wrong on the server: " + data.error);
         } else {
-          addMessage("bot", "Lo siento mi amor, no entendí la respuesta del servidor.");
+          addMessage("bot", "I’m sorry, I didn’t understand the server response.");
         }
       } catch (err) {
-        addMessage("bot", "Lo siento mi amor, algo falló al conectar. Try again in a moment.");
+        addMessage("bot", "I’m sorry, something went wrong connecting to the server. Try again in a moment.");
       }
     }
 
