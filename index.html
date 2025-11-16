@@ -505,8 +505,11 @@
     const typingIndicator = document.getElementById("typing-indicator");
     const lockedToast = document.getElementById("locked-toast");
     const upgradeButton = document.getElementById("upgrade-button");
+    const paywallNote = document.getElementById("paywall-note");
+    const upgradeContainer = document.getElementById("upgrade-container");
 
     const PAYMENT_LINK = "https://buy.stripe.com/6oUeV56dcgwFcn5axv63K00";
+    const IS_PRO_KEY = "lmc_isProSubscriber";
 
     let langMode = "auto";
     let lastUserMessage = "";
@@ -515,18 +518,45 @@
     const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
     const FREE_RESET_DATE_KEY = "lmc_lastFreeResetDate";
 
+    // Detect ?pro=1 after Stripe checkout
+    const params = new URLSearchParams(window.location.search);
+    const proParam = params.get("pro");
+    let isPro = localStorage.getItem(IS_PRO_KEY) === "1";
+
+    if (proParam === "1") {
+      isPro = true;
+      localStorage.setItem(IS_PRO_KEY, "1");
+      // Clean URL (remove ?pro=1) for next visits
+      if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
     const lastFreeResetDate = localStorage.getItem(FREE_RESET_DATE_KEY) || "";
 
-    // Daily free-message reset
+    // Daily free-message reset for non-pro users
     let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
-    if (lastFreeResetDate !== today) {
-      usedMessages = 0;
-      localStorage.setItem("lmc_usedMessages", "0");
-      localStorage.setItem(FREE_RESET_DATE_KEY, today);
+    if (!isPro) {
+      if (lastFreeResetDate !== today) {
+        usedMessages = 0;
+        localStorage.setItem("lmc_usedMessages", "0");
+        localStorage.setItem(FREE_RESET_DATE_KEY, today);
+      }
     }
-    let locked = usedMessages >= MAX_FREE_MESSAGES;
+    let locked = !isPro && usedMessages >= MAX_FREE_MESSAGES;
+
+    // If pro, hide paywall UI and show Plus status
+    if (isPro) {
+      if (paywallNote) paywallNote.style.display = "none";
+      if (upgradeContainer) upgradeContainer.style.display = "none";
+      const subtitle = document.querySelector("#header p");
+      if (subtitle) {
+        subtitle.textContent = "MindCoach Plus – unlimited daily support active 💛";
+      }
+    }
 
     // Paywall texts
     const englishPaywallText = `
@@ -652,6 +682,7 @@ This pause is healing you.
     }
 
     function lockChat(showMessage = true) {
+      if (isPro) return; // never lock Plus users
       locked = true;
       localStorage.setItem("lmc_usedMessages", String(MAX_FREE_MESSAGES));
       if (showMessage) addMessage("bot", getPaywallText());
@@ -666,8 +697,8 @@ This pause is healing you.
     async function sendMessage() {
       const text = input.value.trim();
 
-      // If locked, just guide to upgrade and open checkout on demand
-      if (locked) {
+      // If locked (and not pro), just guide to upgrade
+      if (locked && !isPro) {
         scrollToUpgrade();
         showLockedToast();
         return;
@@ -691,9 +722,12 @@ This pause is healing you.
 
         if (data.reply) {
           addMessage("bot", data.reply);
-          usedMessages += 1;
-          localStorage.setItem("lmc_usedMessages", String(usedMessages));
-          if (usedMessages >= MAX_FREE_MESSAGES && !locked) lockChat(true);
+
+          if (!isPro) {
+            usedMessages += 1;
+            localStorage.setItem("lmc_usedMessages", String(usedMessages));
+            if (usedMessages >= MAX_FREE_MESSAGES && !locked) lockChat(true);
+          }
         } else if (data.error) {
           addMessage("bot", getErrorText("server"));
         } else {
@@ -785,8 +819,8 @@ This pause is healing you.
       "Hola mi amor 💛 Soy tu Latina MindCoach. How are you feeling right now — anxious, overwhelmed, sad, angry, numb, or you don’t know?"
     );
 
-    // If already locked from previous day
-    if (locked) lockChat(false); else showTyping(false);
+    // Initial lock state
+    if (!isPro && locked) lockChat(false); else showTyping(false);
   </script>
 </body>
 </html>
