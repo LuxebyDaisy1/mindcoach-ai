@@ -3,128 +3,824 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MindCoach AI</title>
+  <title>Latina MindCoach</title>
   <link rel="stylesheet" href="styles.css" />
 
   <style>
-    body {
-      background: #ffffff;
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+    :root {
+      --bg: #f5f3ff;
+      --card-bg: #ffffff;
+      --accent: #525f7f;
+      --accent-soft: #dde3ff;
+      --accent-strong: #3b4260;
+      --pause: #f5a623;
+      --pause-soft: #ffe7bd;
+      --border-subtle: #e4e4f0;
+      --text-main: #222233;
+      --text-soft: #666680;
+      --text-softer: #9999b3;
+      --danger: #d9534f;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top left, #fef3ff, #f0f4ff 40%, #f5f3ff 80%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 10px;
+    }
+
+    #app-shell {
+      background: var(--card-bg);
+      border-radius: 24px;
+      box-shadow:
+        0 14px 35px rgba(15, 23, 42, 0.15),
+        0 0 0 1px rgba(148, 163, 184, 0.15);
+      max-width: 860px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      max-height: 820px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+      }
+      #app-shell {
+        border-radius: 0;
+        max-height: 100vh;
+      }
+    }
+
+    /* HEADER */
+    #header {
+      padding: 14px 20px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: linear-gradient(135deg, #ffffff, #f8f5ff);
+    }
+
+    #header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: 0.01em;
+    }
+
+    #header p {
+      margin: 5px 0 0;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* LANGUAGE BAR */
+    #lang-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 20px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #fafbff;
+    }
+
+    #lang-bar span {
+      font-size: 12px;
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    #lang-buttons {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 999px;
+      background: #ecefff;
+      border: 1px solid #d5dbff;
+    }
+
+    #lang-buttons button {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-soft);
+      min-width: 42px;
+    }
+
+    #lang-buttons button.active {
+      background: #ffffff;
+      color: var(--accent-strong);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+    }
+
+    /* DAILY CHECK-IN BANNER */
+    #checkin-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #fff7eb;
+      font-size: 13px;
+    }
+
+    #checkin-banner p {
+      margin: 0;
+      flex: 1;
+      color: #7b5a26;
+    }
+
+    #checkin-banner-buttons {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    #checkin-banner-buttons button {
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 11px;
+      border: 1px solid #f0b35c;
+      background: #ffe5bd;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #checkin-banner-buttons button.secondary {
+      border-color: #d4d4dd;
+      background: #f7f7fb;
+      color: var(--text-soft);
+    }
+
+    /* MOOD BAR */
+    #mood-bar {
+      padding: 10px 20px 4px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #ffffff;
+    }
+
+    #mood-bar p {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    #mood-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    #mood-buttons button {
+      border: 1px solid #d7d9ee;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 12px;
+      background: #f6f7ff;
+      cursor: pointer;
+      color: var(--text-soft);
+    }
+
+    #mood-buttons button:hover {
+      background: #eef0ff;
+      border-color: #c4c7f5;
+    }
+
+    /* CHAT AREA */
     #chat-container {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 18px 20px 4px;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at top, #f9f7ff, #f7f6ff 40%, #f6f7fb 80%);
     }
 
     .message {
       margin-bottom: 12px;
-      padding: 12px;
-      border-radius: 8px;
-      max-width: 85%;
-      line-height: 1.4;
+      padding: 11px 13px;
+      border-radius: 16px;
+      max-width: 82%;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      font-size: 14px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
 
     .user {
       background: #d9e6ff;
       align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      color: #1f2937;
     }
 
     .bot {
-      background: #f2f2f2;
+      background: #ffffff;
       align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e3e5f5;
+      color: #111827;
     }
 
+    /* Typing indicator */
+    #typing-indicator {
+      display: none;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+
+    #typing-indicator .bubble {
+      background: #ffffff;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e3e5f5;
+      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+
+    #typing-indicator span {
+      font-size: 11px;
+      color: var(--text-softer);
+    }
+
+    .dots {
+      display: inline-flex;
+      gap: 3px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #c7cbe8;
+      animation: bounce 1s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+    .dot:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+      }
+      40% {
+        transform: translateY(-3px);
+        opacity: 1;
+      }
+    }
+
+    /* INPUT / CONTROLS */
     #input-container {
       display: flex;
-      border-top: 1px solid #ccc;
-      padding: 12px;
-      background: #fff;
+      border-top: 1px solid var(--border-subtle);
+      padding: 10px 12px;
+      background: #ffffff;
+      align-items: center;
+      gap: 8px;
     }
 
     #user-input {
       flex: 1;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
+      padding: 11px 12px;
+      border-radius: 999px;
+      border: 1px solid #d6d8ec;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #user-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(82, 95, 127, 0.12);
+    }
+
+    #send-btn,
+    #pause-btn {
+      padding: 10px 16px;
+      font-size: 13px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      font-weight: 600;
     }
 
     #send-btn {
-      margin-left: 10px;
-      padding: 12px 18px;
-      font-size: 16px;
-      background: #525f7f;
-      color: white;
-      border-radius: 6px;
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    #send-btn.locked {
+      background: #9ca3af;
+      box-shadow: none;
+    }
+
+    #send-btn:hover:not(.locked) {
+      background: var(--accent-strong);
+    }
+
+    #pause-btn {
+      background: #f5a623;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
+    }
+
+    #pause-btn:hover:not(:disabled) {
+      background: #e4961e;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #paywall-note {
+      padding: 6px 20px 8px;
+      font-size: 11px;
+      color: var(--text-softer);
+      border-top: 1px solid var(--border-subtle);
+      background: #fafbff;
+      text-align: center;
+    }
+
+    /* UPGRADE BUTTON (Stripe payment link) */
+    #upgrade-container {
+      padding: 8px 20px 14px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: center;
+    }
+
+    #upgrade-button {
+      padding: 10px 22px;
+      font-size: 14px;
+      border-radius: 999px;
       border: none;
+      background: #f5a623;
+      color: #ffffff;
+      font-weight: 600;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(245, 166, 35, 0.35);
+      white-space: nowrap;
+    }
+
+    #upgrade-button:hover {
+      background: #e4961e;
+    }
+
+    /* LOCKED TOAST */
+    #locked-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(34, 34, 51, 0.92);
+      color: #fefce8;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      max-width: 90%;
+      text-align: center;
+      z-index: 999;
+    }
+
+    #locked-toast.visible {
+      opacity: 1;
     }
   </style>
 </head>
 
 <body>
-  <div id="chat-container"></div>
+  <div id="app-shell">
+    <div id="header">
+      <h1>Latina MindCoach</h1>
+      <p>For Latinas who carry everything.</p>
+    </div>
 
-  <div id="input-container">
-    <input id="user-input" type="text" placeholder="Type your message…" />
-    <button id="send-btn">Send</button>
+    <div id="lang-bar">
+      <span>Language mode:</span>
+      <div id="lang-buttons">
+        <button data-mode="auto" class="active">Auto</button>
+        <button data-mode="en">EN</button>
+        <button data-mode="es">ES</button>
+      </div>
+    </div>
+
+    <!-- Daily check-in banner (once per day) -->
+    <div id="checkin-banner">
+      <p>Take 30 seconds just for yourself today 💛</p>
+      <div id="checkin-banner-buttons">
+        <button id="checkin-start-btn" type="button">Start today’s check-in</button>
+        <button id="checkin-skip-btn" type="button" class="secondary">Skip</button>
+      </div>
+    </div>
+
+    <div id="mood-bar">
+      <p>How are you feeling right now?</p>
+      <div id="mood-buttons">
+        <button onclick="selectMood('anxious')">Anxious</button>
+        <button onclick="selectMood('overwhelmed')">Overwhelmed</button>
+        <button onclick="selectMood('sad')">Sad</button>
+        <button onclick="selectMood('angry')">Angry</button>
+        <button onclick="selectMood('numb')">Numb</button>
+        <button onclick="selectMood('unknown')">I don’t know</button>
+      </div>
+    </div>
+
+    <div id="chat-container">
+      <!-- typing indicator -->
+      <div id="typing-indicator">
+        <div class="bubble">
+          <div class="dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+          <span>MindCoach is thinking…</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-container">
+      <input id="user-input" type="text" placeholder="Tell me how you feel right now…" />
+      <button id="pause-btn" type="button">La Pausa</button>
+      <button id="send-btn" type="button">Send</button>
+    </div>
+
+    <div id="paywall-note">
+      Unlimited daily support is available with the button below 💛
+    </div>
+
+    <div id="upgrade-container">
+      <button id="upgrade-button" type="button">
+        Unlock unlimited support 💛
+      </button>
+    </div>
   </div>
+
+  <!-- Locked toast -->
+  <div id="locked-toast"></div>
 
   <script>
     const chatContainer = document.getElementById("chat-container");
     const input = document.getElementById("user-input");
     const btn = document.getElementById("send-btn");
+    const pauseBtn = document.getElementById("pause-btn");
+    const langButtonsContainer = document.getElementById("lang-buttons");
+    const langButtons = langButtonsContainer.querySelectorAll("button");
+    const checkinBanner = document.getElementById("checkin-banner");
+    const checkinStartBtn = document.getElementById("checkin-start-btn");
+    const checkinSkipBtn = document.getElementById("checkin-skip-btn");
+    const typingIndicator = document.getElementById("typing-indicator");
+    const lockedToast = document.getElementById("locked-toast");
+    const upgradeButton = document.getElementById("upgrade-button");
+    const paywallNote = document.getElementById("paywall-note");
+    const upgradeContainer = document.getElementById("upgrade-container");
+
+    const PAYMENT_LINK = "https://buy.stripe.com/6oUeV56dcgwFcn5axv63K00";
+    const IS_PRO_KEY = "lmc_isProSubscriber";
+
+    let langMode = "auto";
+    let lastUserMessage = "";
+
+    const MAX_FREE_MESSAGES = 3;
+    const CHECKIN_DATE_KEY = "lmc_lastCheckinDate";
+    const FREE_RESET_DATE_KEY = "lmc_lastFreeResetDate";
+
+    // Detect ?pro=1 after Stripe checkout
+    const params = new URLSearchParams(window.location.search);
+    const proParam = params.get("pro");
+    let isPro = localStorage.getItem(IS_PRO_KEY) === "1";
+
+    if (proParam === "1") {
+      isPro = true;
+      localStorage.setItem(IS_PRO_KEY, "1");
+      // Clean URL (remove ?pro=1) for next visits
+      if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const lastCheckinDate = localStorage.getItem(CHECKIN_DATE_KEY) || "";
+    const lastFreeResetDate = localStorage.getItem(FREE_RESET_DATE_KEY) || "";
+
+    // Daily free-message reset for non-pro users
+    let usedMessages = Number(localStorage.getItem("lmc_usedMessages") || "0");
+    if (!isPro) {
+      if (lastFreeResetDate !== today) {
+        usedMessages = 0;
+        localStorage.setItem("lmc_usedMessages", "0");
+        localStorage.setItem(FREE_RESET_DATE_KEY, today);
+      }
+    }
+    let locked = !isPro && usedMessages >= MAX_FREE_MESSAGES;
+
+    // If pro, hide paywall UI and show Plus status
+    if (isPro) {
+      if (paywallNote) paywallNote.style.display = "none";
+      if (upgradeContainer) upgradeContainer.style.display = "none";
+      const subtitle = document.querySelector("#header p");
+      if (subtitle) {
+        subtitle.textContent = "MindCoach Plus – unlimited daily support active 💛";
+      }
+    }
+
+    // Paywall texts
+    const englishPaywallText = `
+You’ve reached your free messages for now 💛
+
+To keep receiving emotional support from Latina MindCoach whenever you need it, unlock unlimited access with the button below.
+
+I’ll be here when you’re ready.
+`.trim();
+
+    const spanishPaywallText = `
+Mi amor, ya usaste tus mensajes gratuitos de hoy 💛
+
+Para seguir recibiendo apoyo emocional de Latina MindCoach cuando lo necesites, desbloquea acceso ilimitado con el botón de abajo.
+
+Aquí estaré cuando estés lista.
+`.trim();
+
+    const laPausaText = `
+Breathe with me for a moment.
+
+You’ve carried too much for too long, mi amor.
+You don’t have to solve anything right now. Just pause.
+
+Inhale…
+Exhale…
+
+You’re safe in this moment.
+Nothing is required of you right now.
+Let your nervous system soften.
+
+You are not behind.
+You are not failing.
+You are not alone.
+
+This pause is healing you.
+`.trim();
+
+    // Spanish detection
+    function detectIfSpanish(text) {
+      const words = [
+        "hola","buenos","buenas","estoy","siento","gracias","porque","por qué",
+        "cómo","como","que","qué","dónde","cuando","cuándo","amor","triste",
+        "ansiosa","ansioso","cansada","cansado","miedo","preocupada","preocupado"
+      ];
+      const lower = text.toLowerCase();
+      let hits = 0;
+      for (const w of words) if (lower.includes(w)) hits++;
+      return hits >= 2;
+    }
+
+    function shouldUseSpanishPaywall() {
+      if (langMode === "es") return true;
+      if (langMode === "en") return false;
+      if (langMode === "auto") {
+        if (!lastUserMessage) return false;
+        return detectIfSpanish(lastUserMessage);
+      }
+      return false;
+    }
+
+    function getPaywallText() {
+      return shouldUseSpanishPaywall() ? spanishPaywallText : englishPaywallText;
+    }
+
+    function getLockedToastText() {
+      const isSpanish = shouldUseSpanishPaywall();
+      return isSpanish
+        ? "Toca el botón amarillo de abajo para desbloquear apoyo ilimitado 💛"
+        : "Tap the yellow button below to unlock unlimited support 💛";
+    }
+
+    function getErrorText(kind) {
+      const isSpanish = shouldUseSpanishPaywall();
+      const offline = !navigator.onLine;
+      if (kind === "server") {
+        return isSpanish
+          ? "Lo siento mi amor, parece que hubo un problema en el servidor. Intenta de nuevo en un momento, por favor."
+          : "I’m sorry, it looks like something went wrong on the server. Please try again in a moment.";
+      }
+      if (offline) {
+        return isSpanish
+          ? "Parece que no hay conexión a internet en este momento. Verifica tu conexión y vuelve a intentar, mi amor."
+          : "It looks like there’s no internet connection right now. Please check your connection and try again.";
+      }
+      return isSpanish
+        ? "Lo siento mi amor, parece que hubo un problema con la conexión. Intenta de nuevo en un momento, por favor."
+        : "I’m sorry, it looks like there was a problem with the connection. Please try again.";
+    }
+
+    function scrollToUpgrade() {
+      const upgrade = document.getElementById("upgrade-button");
+      if (upgrade && upgrade.scrollIntoView) {
+        upgrade.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function showLockedToast() {
+      if (!lockedToast) return;
+      lockedToast.textContent = getLockedToastText();
+      lockedToast.classList.add("visible");
+      setTimeout(() => {
+        lockedToast.classList.remove("visible");
+      }, 2400);
+    }
+
+    function openCheckout() {
+      window.location.href = PAYMENT_LINK;
+    }
 
     function addMessage(sender, text) {
       const div = document.createElement("div");
       div.className = "message " + sender;
       div.textContent = text;
-      chatContainer.appendChild(div);
+      chatContainer.insertBefore(div, typingIndicator);
       chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function showTyping(show) {
+      if (!typingIndicator) return;
+      typingIndicator.style.display = show ? "block" : "none";
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function lockChat(showMessage = true) {
+      if (isPro) return; // never lock Plus users
+      locked = true;
+      localStorage.setItem("lmc_usedMessages", String(MAX_FREE_MESSAGES));
+      if (showMessage) addMessage("bot", getPaywallText());
+      input.disabled = true;
+      input.placeholder = shouldUseSpanishPaywall()
+        ? "Desbloquea apoyo ilimitado con el botón de abajo 💛"
+        : "Unlock unlimited support with the button below 💛";
+      btn.textContent = "Locked";
+      btn.classList.add("locked");
     }
 
     async function sendMessage() {
       const text = input.value.trim();
+
+      // If locked (and not pro), just guide to upgrade
+      if (locked && !isPro) {
+        scrollToUpgrade();
+        showLockedToast();
+        return;
+      }
+
       if (!text) return;
+
+      lastUserMessage = text;
 
       addMessage("user", text);
       input.value = "";
+      showTyping(true);
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: text })
-      });
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, langMode })
+        });
+        const data = await response.json();
 
-      const data = await response.json();
-      addMessage("bot", data.reply);
+        if (data.reply) {
+          addMessage("bot", data.reply);
+
+          if (!isPro) {
+            usedMessages += 1;
+            localStorage.setItem("lmc_usedMessages", String(usedMessages));
+            if (usedMessages >= MAX_FREE_MESSAGES && !locked) lockChat(true);
+          }
+        } else if (data.error) {
+          addMessage("bot", getErrorText("server"));
+        } else {
+          const generic = shouldUseSpanishPaywall()
+            ? "Lo siento, no entendí la respuesta del servidor. Intenta de nuevo por favor."
+            : "I’m sorry, I didn’t understand the server response. Please try again.";
+          addMessage("bot", generic);
+        }
+      } catch {
+        addMessage("bot", getErrorText("network"));
+      } finally {
+        showTyping(false);
+      }
     }
 
-    btn.onclick = sendMessage;
+    function triggerLaPausa() {
+      addMessage("bot", laPausaText);
+    }
+
+    function selectMood(mood) {
+      let text = "";
+      switch (mood) {
+        case "anxious": text = "I’m feeling anxious and my mind is racing."; break;
+        case "overwhelmed": text = "I’m overwhelmed and carrying too much right now."; break;
+        case "sad": text = "I feel sad and low energy today."; break;
+        case "angry": text = "I feel angry and frustrated."; break;
+        case "numb": text = "I feel numb, like I can’t even feel my emotions clearly."; break;
+        case "unknown": text = "I don’t even know how I feel, everything is mixed."; break;
+      }
+      if (!text) return;
+      input.value = text;
+      sendMessage();
+    }
+
+    function setLangMode(mode) {
+      langMode = mode;
+      langButtons.forEach(b => {
+        b.classList.toggle("active", b.getAttribute("data-mode") === mode);
+      });
+    }
+
+    langButtonsContainer.addEventListener("click", e => {
+      if (e.target.tagName.toLowerCase() === "button") {
+        const mode = e.target.getAttribute("data-mode");
+        if (mode) setLangMode(mode);
+      }
+    });
+
+    btn.onclick = () => {
+      sendMessage();
+    };
+
+    pauseBtn.onclick = triggerLaPausa;
+
     input.addEventListener("keydown", e => {
       if (e.key === "Enter") sendMessage();
     });
 
+    if (upgradeButton) {
+      upgradeButton.onclick = openCheckout;
+    }
+
+    // Daily check-in banner
+    if (checkinBanner) {
+      if (lastCheckinDate !== today) {
+        checkinBanner.style.display = "flex";
+      }
+      if (checkinStartBtn) {
+        checkinStartBtn.onclick = () => {
+          localStorage.setItem(CHECKIN_DATE_KEY, today);
+          checkinBanner.style.display = "none";
+          addMessage(
+            "bot",
+            "Let’s take a small moment just for you today 🌱\n\nIf you want, answer these three things in your own words:\n\n1) In 1–3 words, how would you name your mood today?\n2) Where do you feel it the most in your body?\n3) What’s the heaviest thing on your mind right now?"
+          );
+        };
+      }
+      if (checkinSkipBtn) {
+        checkinSkipBtn.onclick = () => {
+          localStorage.setItem(CHECKIN_DATE_KEY, today);
+          checkinBanner.style.display = "none";
+        };
+      }
+    }
+
     // Initial greeting
-    addMessage("bot", "Hello 🌱 I'm glad you're here. How are you feeling right now?");
+    addMessage(
+      "bot",
+      "Hola mi amor 💛 Soy tu Latina MindCoach. How are you feeling right now — anxious, overwhelmed, sad, angry, numb, or you don’t know?"
+    );
+
+    // Initial lock state
+    if (!isPro && locked) lockChat(false); else showTyping(false);
   </script>
-
-  <!-- STRIPE BUY BUTTON -->
-  <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-
-  <stripe-buy-button
-    buy-button-id="buy_btn_1STXD50YpWkVmsiLFRmgapRw"
-    publishable-key="pk_live_51STDB8OYpWkVmsiLwKPILRZMTvLu8FA21IrgrfoACFtO5qLaA1ofHHTPSJ0SWW6To6Z3MDZJ8yPDreptWiX0ta4L00Xrlp4xW">
-  </stripe-buy-button>
-
 </body>
 </html>
